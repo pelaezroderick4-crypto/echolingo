@@ -107,6 +107,7 @@
     }
 
     h3 { margin: 0; font-size: 15px; }
+
     p { line-height: 1.6; }
 
     .muted, .small {
@@ -727,13 +728,14 @@
   function normalizeDetectedLanguage(value) {
     const language = String(value || "").toLowerCase().trim();
     if (language === "en" || language.startsWith("english")) return "english";
-    if (language === "es" || language.startsWith("spanish") ||
-        language.startsWith("español")) return "spanish";
+    if (language === "es" || language.startsWith("spanish") || language.startsWith("español")) return "spanish";
     return "unknown";
   }
 
-  // Score transcripts for language clues. This is a heuristic, not a
-  // guaranteed detector, but it can help compare two constrained passes.
+  // Lightweight text-based language labeling. Whisper performs multilingual
+  // automatic language detection during transcription; this heuristic is only
+  // used to choose the display label when the pipeline does not expose a
+  // dependable detected-language field. It does not alter the transcript.
   const LANGUAGE_MARKERS = {
     spanish: [
       " el ", " la ", " los ", " las ", " un ", " una ", " unos ", " unas ",
@@ -758,91 +760,46 @@
   function scoreTranscriptLanguage(text, language) {
     const clean = (text || "").trim();
     if (!clean) return -100;
-
-    const lower = " " +
-      clean.toLocaleLowerCase().replace(/\s+/g, " ") + " ";
-
+    const lower = " " + clean.toLocaleLowerCase().replace(/\s+/g, " ") + " ";
     let score = 0;
-
     for (const marker of LANGUAGE_MARKERS[language]) {
       if (lower.includes(marker)) score += 2;
     }
-
-    const words = lower.match(/[\p{L}\p{N}]+/gu) || [];
-
-    if (language === "spanish" && /[¿¡áéíóúüñ]/i.test(clean)) {
-      score += 4;
-    }
-
-    if (language === "english" && /[¿¡áéíóúüñ]/i.test(clean)) {
-      score -= 2;
-    }
-
-    if (words.length < 3) score -= 2;
-
+    if (language === "spanish" && /[¿¡áéíóúüñ]/i.test(clean)) score += 4;
+    if (language === "english" && /[¿¡áéíóúüñ]/i.test(clean)) score -= 2;
     return score;
   }
 
   function identifyLanguage(text) {
     const spanishScore = scoreTranscriptLanguage(text, "spanish");
     const englishScore = scoreTranscriptLanguage(text, "english");
-
     if (spanishScore >= englishScore + 2) return "spanish";
     if (englishScore >= spanishScore + 2) return "english";
-
     return "unknown";
   }
 
   async function transcribeLiveChunk(samples) {
-    // Run one English-constrained and one Spanish-constrained pass.
-    // This costs more processing time, but avoids relying only on automatic
-    // detection when Whisper reports an uncertain language.
-    const options = {
+    // Let multilingual Whisper detect the language from this audio chunk.
+    // Do not force English or Spanish: a forced pass can produce plausible-
+    // looking but incorrect words when the speaker uses the other language.
+    const result = await transcriber(samples, {
       sampling_rate: WHISPER_SAMPLE_RATE,
       task: "transcribe",
       return_timestamps: false
+    });
+
+    const text = (result.text || "").trim();
+    const detectedLanguage = normalizeDetectedLanguage(
+      result.language || result.detected_language ||
+      (result.chunks && result.chunks[0] && result.chunks[0].language)
+    );
+
+    return {
+      text,
+      language: detectedLanguage !== "unknown"
+        ? detectedLanguage
+        : identifyLanguage(text)
     };
-
-    const englishResult = await transcriber(samples, {
-      ...options,
-      language: "english"
-    });
-
-    const spanishResult = await transcriber(samples, {
-      ...options,
-      language: "spanish"
-    });
-
-    const englishText = (englishResult.text || "").trim();
-    const spanishText = (spanishResult.text || "").trim();
-
-    const englishScore =
-      scoreTranscriptLanguage(englishText, "english");
-
-    const spanishScore =
-      scoreTranscriptLanguage(spanishText, "spanish");
-
-    if (!englishText && spanishText) {
-      return { text: spanishText, language: "spanish" };
-    }
-
-    if (!spanishText && englishText) {
-      return { text: englishText, language: "english" };
-    }
-
-    if (spanishScore > englishScore) {
-      return { text: spanishText, language: "spanish" };
-    }
-
-    if (englishScore > spanishScore) {
-      return { text: englishText, language: "english" };
-    }
-
-    if (spanishText.length > englishText.length) {
-      return { text: spanishText, language: "unknown" };
-    }
-
-    return { text: englishText, language: "unknown" };
   }
 
   function normalizeWord(word) {
@@ -854,9 +811,7 @@
   function removeOverlap(previousText, newText) {
     const previousWords = (previousText || "").trim().split(/\s+/)
       .filter(Boolean);
-
-    const newWords = (newText || "").trim().split(/\s+/)
-      .filter(Boolean);
+    const newWords = (newText || "").trim().split(/\s+/).filter(Boolean);
 
     if (!previousWords.length || !newWords.length) {
       return newText.trim();
@@ -893,7 +848,6 @@
     if (!clean) return;
 
     const normalized = normalizeDetectedLanguage(detectedLanguage);
-
     const language = normalized !== "unknown"
       ? normalized
       : identifyLanguage(clean);
@@ -924,14 +878,12 @@
     liveOutput.appendChild(bubble);
 
     liveOutput.scrollTop = liveOutput.scrollHeight;
-
     lastDisplayedText = clean;
     lastDisplayedLanguage = language;
   }
 
   function updateLiveStatus(message) {
     const waiting = liveChunkQueue.length;
-
     const average = processedChunkCount
       ? (totalInferenceSeconds / processedChunkCount).toFixed(1) + " s"
       : "not measured";
@@ -971,7 +923,7 @@
         if (!liveActive || sessionId !== liveSessionId) break;
         if (item.generation !== conversationGeneration) continue;
 
-        updateLiveStatus("Checking English and Spanish recognition...");
+        updateLiveStatus("Transcribing with automatic language detection...");
 
         const startedAt = performance.now();
 
@@ -1149,11 +1101,9 @@
       const chunkSamples = Math.floor(
         sourceSampleRate * CHUNK_SECONDS
       );
-
       const overlapSamples = Math.floor(
         sourceSampleRate * OVERLAP_SECONDS
       );
-
       const stepSamples = chunkSamples - overlapSamples;
 
       liveProcessor.onaudioprocess = event => {
