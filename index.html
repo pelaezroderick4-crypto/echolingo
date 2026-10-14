@@ -145,11 +145,18 @@
   let liveAudioContext = null;
   let liveSource = null;
   let liveProcessor = null;
+  let silentGain = null;
+
   let liveSamples = [];
   let liveSampleCount = 0;
   let liveActive = false;
   let processingChunk = false;
   let liveSessionId = 0;
+
+  // At most one additional chunk waits while Whisper is busy.
+  // Replacing the pending chunk prevents an unlimited audio backlog.
+  let pendingChunk = null;
+  let pendingSampleRate = 0;
 
   const CHUNK_SECONDS = 5;
 
@@ -263,7 +270,9 @@
       if (liveActive && sessionId === liveSessionId) {
         appendLiveText(result.text);
         liveStatus.textContent =
-          "Live capture is running. Processing continues in short chunks.";
+          pendingChunk
+            ? "Transcription running. Catching up with recent audio..."
+            : "Live capture is running. Processing continues in short chunks.";
       }
     } catch (error) {
       if (sessionId === liveSessionId) {
@@ -272,12 +281,36 @@
       }
     } finally {
       processingChunk = false;
+
+      // Process at most one waiting chunk. If Whisper falls behind,
+      // newer audio replaces the waiting chunk instead of growing a queue.
+      if (
+        liveActive &&
+        sessionId === liveSessionId &&
+        pendingChunk
+      ) {
+        const nextChunk = pendingChunk;
+        const nextSampleRate = pendingSampleRate;
+
+        pendingChunk = null;
+        pendingSampleRate = 0;
+
+        void transcribeLiveChunk(
+          nextChunk,
+          nextSampleRate,
+          sessionId
+        );
+      }
     }
   }
 
   async function stopLiveAudio(message = "Live audio is stopped.") {
     liveActive = false;
     liveSessionId++;
+
+    // Discard waiting audio from the stopped session.
+    pendingChunk = null;
+    pendingSampleRate = 0;
 
     if (liveProcessor) {
       liveProcessor.onaudioprocess = null;
@@ -288,6 +321,11 @@
     if (liveSource) {
       try { liveSource.disconnect(); } catch (_) {}
       liveSource = null;
+    }
+
+    if (silentGain) {
+      try { silentGain.disconnect(); } catch (_) {}
+      silentGain = null;
     }
 
     if (liveStream) {
@@ -302,7 +340,6 @@
     liveAudioContext = null;
     liveSamples = [];
     liveSampleCount = 0;
-    processingChunk = false;
 
     startLiveButton.disabled = !transcriber;
     stopLiveButton.disabled = true;
@@ -324,8 +361,6 @@
       "Choose a browser tab and enable Share tab audio if offered.";
 
     try {
-      // Browser requires a video track for display capture.
-      // Only the audio track is connected to the transcription pipeline.
       liveStream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true
@@ -343,8 +378,11 @@
       liveSessionId++;
       const thisSession = liveSessionId;
       liveActive = true;
+
       liveSamples = [];
       liveSampleCount = 0;
+      pendingChunk = null;
+      pendingSampleRate = 0;
 
       liveOutput.textContent = "";
       liveAudioContext = new AudioContext();
@@ -354,41 +392,52 @@
         new MediaStream(audioTracks)
       );
 
-      // ScriptProcessor is used here for a simple browser prototype.
-      // A production version should use AudioWorklet.
       liveProcessor = liveAudioContext.createScriptProcessor(
         4096, 1, 1
+      );
+
+      const targetSamples = Math.floor(
+        liveAudioContext.sampleRate * CHUNK_SECONDS
       );
 
       liveProcessor.onaudioprocess = event => {
         if (!liveActive || thisSession !== liveSessionId) return;
 
         const input = event.inputBuffer.getChannelData(0);
+
         for (let i = 0; i < input.length; i++) {
           liveSamples.push(input[i]);
         }
         liveSampleCount += input.length;
 
-        const targetSamples =
-          liveAudioContext.sampleRate * CHUNK_SECONDS;
+        // Extract fixed-size chunks. Do not send all accumulated samples
+        // to Whisper when it has been busy for longer than five seconds.
+        while (liveSampleCount >= targetSamples) {
+          const chunkArray = liveSamples.splice(0, targetSamples);
+          liveSampleCount -= targetSamples;
 
-        if (liveSampleCount >= targetSamples && !processingChunk) {
-          const chunk = new Float32Array(liveSamples);
-          liveSamples = [];
-          liveSampleCount = 0;
+          const chunk = new Float32Array(chunkArray);
+          const sampleRate = liveAudioContext.sampleRate;
 
-          transcribeLiveChunk(
-            chunk,
-            liveAudioContext.sampleRate,
-            thisSession
-          );
+          if (!processingChunk) {
+            void transcribeLiveChunk(
+              chunk,
+              sampleRate,
+              thisSession
+            );
+          } else {
+            // Keep only the most recent waiting chunk. This bounds memory
+            // and latency when inference is slower than real time.
+            pendingChunk = chunk;
+            pendingSampleRate = sampleRate;
+          }
         }
       };
 
       liveSource.connect(liveProcessor);
 
-      // Keep the processor active without sending captured sound to speakers.
-      const silentGain = liveAudioContext.createGain();
+      // Keep the processor active without playing captured audio aloud.
+      silentGain = liveAudioContext.createGain();
       silentGain.gain.value = 0;
       liveProcessor.connect(silentGain);
       silentGain.connect(liveAudioContext.destination);
@@ -396,7 +445,7 @@
       liveStream.getVideoTracks().forEach(track => {
         track.addEventListener("ended", () => {
           if (thisSession === liveSessionId && liveActive) {
-            stopLiveAudio("Browser-tab sharing ended.");
+            void stopLiveAudio("Browser-tab sharing ended.");
           }
         });
       });
@@ -404,7 +453,7 @@
       audioTracks.forEach(track => {
         track.addEventListener("ended", () => {
           if (thisSession === liveSessionId && liveActive) {
-            stopLiveAudio("Shared tab audio ended.");
+            void stopLiveAudio("Shared tab audio ended.");
           }
         });
       });
