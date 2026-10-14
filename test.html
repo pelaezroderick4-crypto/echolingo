@@ -142,7 +142,7 @@ select { cursor:pointer; }
     <div id="fileStatus">File transcription is optional.</div>
   </section>
 
-  <!-- NEW FEATURE: DOCUMENT TRANSLATION -->
+  <!-- DOCUMENT TRANSLATION -->
   <section class="panel">
     <h2 class="section-title">Document Translation</h2>
     <p class="help">
@@ -294,14 +294,37 @@ function normalizeText(text) {
 }
 
 function detectLanguageLabel(text) {
-  const spanishWords =
-    /\b(hola|qué|como|cómo|cual|cuál|donde|dónde|cuando|cuándo|por|para|usted|ustedes|gracias|buenos|buenas|nombre|nacimiento|teléfono|numero|número|seguro|vida|sí|esta|está|tiene|ninguno|ninguna|cuido|dieta|noviembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|diciembre|del|con|tengo|puede|quiero|necesita|pero|porque|entonces|ahora|también|familia|fecha|enfermedad|diabetes|corazón|enfermedades|no|me|mi|es|el|la|los|las|un|una|y)\b/i.test(text);
+  // Score several distinctive words instead of treating one shared word
+  // (such as "diabetes" or "me") as enough to make a segment uncertain.
+  const spanishWords = [
+    "hola", "qué", "cómo", "cuál", "dónde", "cuándo", "usted", "ustedes",
+    "gracias", "buenos", "buenas", "nombre", "nacimiento", "teléfono",
+    "número", "sí", "está", "tiene", "ninguno", "ninguna", "cuido", "dieta",
+    "noviembre", "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "diciembre", "del", "con",
+    "tengo", "puede", "quiero", "necesita", "pero", "porque", "entonces",
+    "ahora", "también", "familia", "fecha", "enfermedad", "corazón",
+    "enfermedades", "solo", "solamente", "diagnosticado", "diagnosticada",
+    "intento", "cuidarme", "prediabetes", "asthma"
+  ];
+  const englishWords = [
+    "the", "what", "when", "where", "who", "why", "how", "your", "you",
+    "are", "was", "were", "have", "has", "hello", "name", "date", "birth",
+    "best", "contact", "number", "insurance", "life", "thank", "thanks",
+    "please", "would", "could", "does", "and", "for", "with", "this", "that",
+    "they", "not", "chronic", "medical", "conditions", "asthma", "heart",
+    "disease", "results", "patient", "like", "or", "do", "any"
+  ];
 
-  const englishWords =
-    /\b(the|what|when|where|who|why|how|your|you|are|is|was|were|have|has|hello|name|date|birth|best|contact|number|insurance|life|thank|thanks|please|can|would|could|does|and|for|with|this|that|we|they|my|me|it|not|chronic|medical|conditions|like|asthma|heart|disease|results|patient)\b/i.test(text);
+  const words = normalizeText(text).split(" ").filter(Boolean);
+  const count = list =>
+    words.reduce((total, word) => total + (list.includes(word) ? 1 : 0), 0);
 
-  if (spanishWords && !englishWords) return "spanish";
-  if (englishWords && !spanishWords) return "english";
+  const spanishScore = count(spanishWords);
+  const englishScore = count(englishWords);
+
+  if (spanishScore >= 1 && spanishScore > englishScore) return "spanish";
+  if (englishScore >= 1 && englishScore > spanishScore) return "english";
   return "unknown";
 }
 
@@ -473,13 +496,18 @@ function rejectRepetitiveOutput(text) {
 
 function removeOverlap(previous, next) {
   const a = normalizeText(previous).split(" ").filter(Boolean);
-  const b = (next || "").trim().split(/\s+/).filter(Boolean);
+  const originalNextWords = (next || "").trim().split(/\s+/).filter(Boolean);
+  const b = originalNextWords.map(word => normalizeText(word));
   const max = Math.min(12, a.length, b.length);
 
-  for (let n = max; n >= 2; n--) {
-    const tail = a.slice(-n).join(" ");
-    const head = b.slice(0, n).join(" ").toLowerCase();
-    if (tail === head) return b.slice(n).join(" ");
+  // Compare punctuation-free words, but only remove an overlap of at least
+  // three words to avoid accidentally deleting a short, naturally repeated phrase.
+  for (let n = max; n >= 3; n--) {
+    const tail = a.slice(-n);
+    const head = b.slice(0, n);
+    if (tail.every((word, index) => word === head[index])) {
+      return originalNextWords.slice(n).join(" ");
+    }
   }
   return (next || "").trim();
 }
@@ -498,11 +526,16 @@ function cleanLiveResult(text) {
 
   const normalized = normalizeText(clean);
   const now = Date.now();
+  const prior = normalizeText(lastAcceptedText);
 
-  if (normalized && normalized === normalizeText(lastAcceptedText) &&
+  // Suppress a short fragment if it already appeared in the immediately
+  // preceding result, such as "diabetes" after "prediabetes".
+  if (normalized.length >= 5 && normalized.split(" ").length <= 2 &&
+      prior.includes(normalized) && now - lastAcceptedAt < 12000) return "";
+
+  if (normalized && normalized === prior &&
       now - lastAcceptedAt < 15000) return "";
 
-  const prior = normalizeText(lastAcceptedText);
   if (normalized.length > 12 && prior.length > 12 &&
       (normalized.includes(prior) || prior.includes(normalized)) &&
       now - lastAcceptedAt < 12000) return "";
@@ -628,6 +661,7 @@ async function startListening() {
     queue = [];
     previousLiveText = "";
     lastAcceptedText = "";
+    lastAcceptedAt = 0;
     chunkNumber = 0;
 
     processorNode.onaudioprocess = handleAudioInput;
