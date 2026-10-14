@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>EchoLingo | Audio Capture Test</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      font-family: Arial, sans-serif;
+      background: #101827;
+      color: #f3f6fc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    main {
+      width: 100%;
+      max-width: 680px;
+      padding: 28px;
+      background: #1b2638;
+      border: 1px solid #35435a;
+      border-radius: 18px;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #7dd3fc;
+      font-size: 34px;
+    }
+
+    .subtitle {
+      color: #c0ccdd;
+      line-height: 1.6;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 14px;
+      padding: 15px;
+      border: 0;
+      border-radius: 10px;
+      background: #0284c7;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .stop {
+      background: #b91c1c;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 16px;
+      background: #101827;
+      border: 1px solid #35435a;
+      border-radius: 10px;
+      line-height: 1.6;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .notice {
+      margin-top: 20px;
+      padding: 14px;
+      border-left: 4px solid #fbbf24;
+      background: #292719;
+      color: #fef3c7;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .small {
+      color: #9eafc5;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>EchoLingo</h1>
+
+    <p class="subtitle">
+      English ↔ Spanish · Local Audio Capture Test
+    </p>
+
+    <p>
+      Let's check whether your browser can capture audio
+      from a shared browser tab.
+    </p>
+
+    <button id="startButton" type="button">
+      Select Browser Tab and Test Audio
+    </button>
+
+    <button id="stopButton" class="stop" type="button" hidden>
+      Stop Audio Capture
+    </button>
+
+    <div class="status" id="status" role="status" aria-live="polite">
+      Status: Waiting to start.
+    </div>
+
+    <div class="notice">
+      <strong>Privacy:</strong> This prototype does not record,
+      transcribe, translate, or upload audio. It only requests a
+      browser media stream to test audio capture. Use a harmless
+      test tab, not a live interpreting session.
+    </div>
+
+    <p class="small">
+      Use a recent version of Chrome. In the sharing window,
+      select a browser tab and enable Share tab audio if available.
+    </p>
+  </main>
+
+  <script>
+    (() => {
+      let captureStream = null;
+
+      const startButton = document.getElementById("startButton");
+      const stopButton = document.getElementById("stopButton");
+      const statusBox = document.getElementById("status");
+
+      function showStatus(message) {
+        statusBox.textContent = message;
+      }
+
+      function stopCapture(message = "Audio capture stopped. Ready to test again.") {
+        const stream = captureStream;
+        captureStream = null;
+
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+
+        stopButton.hidden = true;
+        startButton.disabled = false;
+        showStatus(message);
+      }
+
+      async function startCapture() {
+        if (!navigator.mediaDevices ||
+            !navigator.mediaDevices.getDisplayMedia) {
+          showStatus(
+            "NOT SUPPORTED: This browser does not provide the " +
+            "screen-sharing API needed for this test."
+          );
+          return;
+        }
+
+        startButton.disabled = true;
+
+        showStatus(
+          "Opening the browser sharing window. Select a browser tab " +
+          "and enable Share tab audio if that option appears."
+        );
+
+        try {
+          const stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: true
+          });
+
+          captureStream = stream;
+
+          const videoTracks = stream.getVideoTracks();
+          const audioTracks = stream.getAudioTracks();
+
+          videoTracks.forEach(track => {
+            track.addEventListener("ended", () => {
+              if (captureStream === stream) {
+                stopCapture("Browser sharing ended. Ready to test again.");
+              }
+            }, { once: true });
+          });
+
+          if (audioTracks.length === 0) {
+            showStatus(
+              "NO AUDIO TRACK: The browser shared the screen or tab, " +
+              "but did not provide audio. Stop sharing and try again, " +
+              "selecting a browser tab with audio sharing enabled."
+            );
+          } else {
+            showStatus(
+              "SUCCESS: Browser audio capture started.\n" +
+              "Audio tracks detected: " + audioTracks.length + ".\n" +
+              "No audio is being recorded or uploaded.\n" +
+              "Click Stop Audio Capture when finished."
+            );
+          }
+
+          stopButton.hidden = false;
+
+        } catch (error) {
+          captureStream = null;
+          startButton.disabled = false;
+          stopButton.hidden = true;
+
+          showStatus(
+            "CAPTURE FAILED: " + error.name + " — " + error.message +
+            "\n\nCheck browser permissions and try again."
+          );
+        }
+      }
+
+      startButton.addEventListener("click", startCapture);
+      stopButton.addEventListener("click", () => stopCapture());
+    })();
+  </script>
+</body>
+</html>
