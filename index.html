@@ -234,7 +234,6 @@
       50% { opacity: .35; }
     }
 
-    /* Fixed-size conversation window */
     .chat-shell {
       margin-top: 18px;
       border: 1px solid #087fba;
@@ -532,22 +531,19 @@
   let liveActive = false;
   let processingChunk = false;
   let liveSessionId = 0;
-
-  // Incremented whenever the user clears the conversation.
-  // Results started in an older conversation are never displayed.
   let conversationGeneration = 0;
 
-  // A bounded FIFO queue prevents unlimited backlog if inference is slow.
   let liveChunkQueue = [];
   let processedChunkCount = 0;
   let droppedChunkCount = 0;
   let totalInferenceSeconds = 0;
   let lastDisplayedText = "";
+  let lastDisplayedLanguage = "unknown";
 
   const WHISPER_SAMPLE_RATE = 16000;
-  const CHUNK_SECONDS = 8;
-  const OVERLAP_SECONDS = 1;
-  const MAX_QUEUED_CHUNKS = 3;
+  const CHUNK_SECONDS = 10;
+  const OVERLAP_SECONDS = 2;
+  const MAX_QUEUED_CHUNKS = 2;
 
   env.allowLocalModels = false;
   env.allowRemoteModels = true;
@@ -594,7 +590,6 @@
       : "Choose an audio file to begin.";
   });
 
-  // Preserve the existing mono conversion and 16 kHz resampling.
   async function prepareWhisperAudio(decoded) {
     const mono = new Float32Array(decoded.length);
 
@@ -703,8 +698,6 @@
       statusBox.textContent =
         "Transcribing audio with automatic language detection...";
 
-      // Omit language: Whisper can attempt to detect English, Spanish,
-      // or another supported language.
       const result = await transcriber(prepared.samples, {
         sampling_rate: WHISPER_SAMPLE_RATE,
         task: "transcribe",
@@ -732,8 +725,24 @@
     }
   });
 
-  // Experimental text-based language labeling. This is a heuristic,
-  // not a guarantee of Whisper's actual detected language.
+  function normalizeDetectedLanguage(value) {
+    const language = String(value || "").toLowerCase().trim();
+
+    if (language === "en" || language.startsWith("english")) {
+      return "english";
+    }
+
+    if (
+      language === "es" ||
+      language.startsWith("spanish") ||
+      language.startsWith("español")
+    ) {
+      return "spanish";
+    }
+
+    return "unknown";
+  }
+
   function identifyLanguage(text) {
     const clean = (text || "").trim();
     if (!clean) return "unknown";
@@ -771,7 +780,6 @@
     if (spanishScore > englishScore) return "spanish";
     if (englishScore > spanishScore) return "english";
 
-    // Very short utterances and shared words are difficult to classify.
     return "unknown";
   }
 
@@ -781,7 +789,6 @@
     );
   }
 
-  // Remove duplicated words caused by overlapping audio chunks.
   function removeOverlap(previousText, newText) {
     const previousWords = (previousText || "").trim().split(/\s+/)
       .filter(Boolean);
@@ -815,17 +822,21 @@
     }
   }
 
-  function appendLiveText(text, generation) {
-    // Ignore results that belong to a conversation cleared by the user.
+  function appendLiveText(text, generation, detectedLanguage) {
     if (generation !== conversationGeneration) return;
 
     const clean = (text || "").trim();
     if (!clean) return;
 
-    const language = identifyLanguage(clean);
-    const previous = lastDisplayedText;
-    const cleanedText = removeOverlap(previous, clean);
+    const normalized = normalizeDetectedLanguage(detectedLanguage);
+    const language = normalized !== "unknown"
+      ? normalized
+      : identifyLanguage(clean);
 
+    const previous =
+      language === lastDisplayedLanguage ? lastDisplayedText : "";
+
+    const cleanedText = removeOverlap(previous, clean);
     if (!cleanedText.trim()) return;
 
     emptyChat.style.display = "none";
@@ -847,9 +858,9 @@
     bubble.appendChild(message);
     liveOutput.appendChild(bubble);
 
-    // Preserve scroll position at the newest message.
     liveOutput.scrollTop = liveOutput.scrollHeight;
     lastDisplayedText = clean;
+    lastDisplayedLanguage = language;
   }
 
   function updateLiveStatus(message) {
@@ -881,7 +892,6 @@
       ) {
         const item = liveChunkQueue.shift();
 
-        // Do not waste time processing chunks from a cleared conversation.
         if (item.generation !== conversationGeneration) continue;
 
         updateLiveStatus("Preparing captured audio...");
@@ -911,7 +921,7 @@
         if (!liveActive || sessionId !== liveSessionId) break;
 
         if (item.generation === conversationGeneration) {
-          appendLiveText(result.text, item.generation);
+          appendLiveText(result.text, item.generation, result.language);
         }
 
         const audioSeconds = item.samples.length / item.sampleRate;
@@ -939,7 +949,6 @@
     } finally {
       processingChunk = false;
 
-      // Keep the controls usable even if a session was stopped mid-inference.
       startLiveButton.disabled = !transcriber || liveActive;
       stopLiveButton.disabled = !liveActive;
 
@@ -958,8 +967,6 @@
   async function stopLiveAudio(message = "Live audio is stopped.") {
     liveActive = false;
     liveSessionId++;
-
-    // Discard chunks not yet processed.
     liveChunkQueue = [];
 
     if (liveProcessor) {
@@ -1000,10 +1007,10 @@
     liveStatus.textContent = message;
   }
 
-  // Clear the visible chat only. Do not stop the audio stream or session.
   newConversationButton.addEventListener("click", () => {
     conversationGeneration++;
     lastDisplayedText = "";
+    lastDisplayedLanguage = "unknown";
     liveChunkQueue = [];
 
     liveOutput.querySelectorAll(".bubble").forEach(bubble => bubble.remove());
@@ -1060,6 +1067,8 @@
       liveSamples = [];
       liveSampleCount = 0;
       liveChunkQueue = [];
+      lastDisplayedText = "";
+      lastDisplayedLanguage = "unknown";
       processedChunkCount = 0;
       droppedChunkCount = 0;
       totalInferenceSeconds = 0;
@@ -1101,8 +1110,6 @@
           liveSamples.splice(0, stepSamples);
           liveSampleCount -= stepSamples;
 
-          // Drop the oldest waiting chunk when the queue is full.
-          // This bounds latency at the cost of potentially missing speech.
           if (liveChunkQueue.length >= MAX_QUEUED_CHUNKS) {
             liveChunkQueue.shift();
             droppedChunkCount++;
@@ -1179,7 +1186,6 @@
     }
   });
 
-  // Keep the empty-state message accurate when the conversation is cleared.
   showEmptyChat();
 </script>
 </body>
