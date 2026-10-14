@@ -1,681 +1,888 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#081020">
-<title>VoxBridge Test | Voice Without Barriers</title>
-<style>
-:root {
-  --navy:#081020; --panel:#101e33; --blue:#087ce8;
-  --teal:#00c99a; --text:#f3f7ff; --muted:#9fb3ce;
-  --border:#243650;
-}
-* { box-sizing:border-box; }
-body {
-  margin:0; padding:24px 16px; color:var(--text);
-  font-family:Arial,Helvetica,sans-serif;
-  background:radial-gradient(ellipse at 10% 0%,#10345b,transparent 38%),var(--navy);
-}
-main { max-width:900px; margin:auto; }
-.brand { display:flex; align-items:center; gap:14px; }
-.logo {
-  width:56px;height:56px;display:grid;place-items:center;
-  border:1px solid #087fba;border-radius:16px;color:var(--teal);
-  font-size:30px;background:#0c2036;
-}
-h1 { margin:0;font-size:clamp(30px,6vw,42px);letter-spacing:-1px; }
-.bridge { color:#00d6bd; }
-.tagline { color:#6ee7ff;font-size:11px;letter-spacing:2px; }
-.intro,.small { color:var(--muted);line-height:1.6; }
-.panel {
-  margin-top:20px;padding:20px;background:var(--panel);
-  border:1px solid var(--border);border-radius:18px;
-}
-h2 { color:#6ee7ff;font-size:19px;margin:0 0 12px; }
-button,input { width:100%;margin-top:12px;padding:13px;border-radius:10px;font:inherit; }
-button {
-  border:0;background:linear-gradient(100deg,#0078f8,#2455ff);
-  color:white;font-weight:bold;cursor:pointer;
-}
-button.secondary { background:#172840;border:1px solid #38516f; }
-button.stop { background:#401b29;border:1px solid #9c3854; }
-button:disabled { opacity:.45;cursor:not-allowed; }
-input { background:#0b1729;color:white;border:1px solid var(--border); }
-.status {
-  white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;
-  margin-top:12px;padding:13px;background:#091525;
-  border:1px solid var(--border);border-radius:10px;
-  color:#c5d8ef;font-size:13px;
-}
-.error { border-color:#a83b56; }
-.divider { height:1px;background:var(--border);margin:24px 0; }
-.pill {
-  display:inline-block;border:1px solid #166b63;border-radius:25px;
-  padding:7px 11px;color:var(--teal);font-size:12px;
-}
-.chat-shell { margin-top:16px;border:1px solid #087fba;border-radius:15px;overflow:hidden; }
-.chat-header {
-  display:flex;align-items:center;justify-content:space-between;gap:10px;
-  flex-wrap:wrap;padding:12px;background:#101e33;border-bottom:1px solid var(--border);
-}
-.chat-header button { width:auto;margin:0;padding:10px 12px;font-size:12px; }
-.chat-messages {
-  height:350px;overflow-y:auto;padding:16px;background:#071323;
-  display:flex;flex-direction:column;gap:12px;
-}
-.empty { margin:auto;text-align:center;color:#7890ad;line-height:1.7; }
-.bubble {
-  max-width:85%;padding:11px 14px;border-radius:14px;
-  line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;
-}
-.english { align-self:flex-start;background:#075ec8;border:1px solid #168aff; }
-.spanish { align-self:flex-end;background:#086b55;border:1px solid #00a985; }
-.unknown { align-self:flex-start;background:#202e43;border:1px solid #64748b; }
-.bubble-label {
-  display:block;font-size:10px;font-weight:bold;letter-spacing:.8px;
-  margin-bottom:4px;text-transform:uppercase;
-}
-.chat-footer { padding:10px 13px;border-top:1px solid var(--border);font-size:11px;color:var(--muted); }
-.notice {
-  margin-top:18px;padding:14px;border-left:4px solid #e9b949;
-  background:#292719;color:#fef3c7;font-size:13px;line-height:1.6;
-}
-@media(max-width:560px) {
-  body { padding:14px 10px; }
-  .panel { padding:14px; }
-  .chat-messages { height:330px; }
-  .bubble { max-width:94%; }
-  .chat-header button { width:100%; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoxBridge Test — Voice Without Barriers</title>
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --panel: #101e30;
+      --panel2: #15263b;
+      --blue: #3287f6;
+      --teal: #13b8a6;
+      --text: #eaf2ff;
+      --muted: #9aabc2;
+      --border: #263b53;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    header {
+      padding: 22px 16px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: #0b1728;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    header h1 span { color: var(--teal); }
+
+    header p {
+      color: var(--muted);
+      margin: 8px 0 0;
+      font-size: 14px;
+    }
+
+    main {
+      width: min(900px, 100%);
+      margin: 0 auto;
+      padding: 18px 14px 30px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 15px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      align-items: center;
+    }
+
+    button, .file-label {
+      border: 0;
+      border-radius: 9px;
+      padding: 11px 15px;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--blue);
+    }
+
+    button.secondary, .file-label {
+      background: var(--panel2);
+      border: 1px solid var(--border);
+    }
+
+    button.stop { background: #b9384a; }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    input[type="file"] { display: none; }
+
+    #status, #fileStatus {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      margin-top: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .progress {
+      width: 100%;
+      height: 5px;
+      margin-top: 12px;
+      background: #263b53;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    #progressBar {
+      width: 0%;
+      height: 100%;
+      background: var(--teal);
+      transition: width .2s;
+    }
+
+    .chat-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .chat-heading h2, .section-title {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    #chat {
+      height: 350px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 12px;
+      background: #081321;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .message {
+      max-width: 88%;
+      padding: 11px 13px;
+      border-radius: 12px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .message .language {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      opacity: .85;
+      margin-bottom: 5px;
+      letter-spacing: .6px;
+    }
+
+    .message.english {
+      align-self: flex-start;
+      background: #153b70;
+      border: 1px solid #235aa0;
+    }
+
+    .message.spanish {
+      align-self: flex-end;
+      background: #07574f;
+      border: 1px solid #0b8276;
+    }
+
+    .message.unknown {
+      align-self: center;
+      background: #263449;
+      border: 1px solid #3c4d64;
+    }
+
+    .message.system {
+      align-self: center;
+      max-width: 100%;
+      color: var(--muted);
+      background: transparent;
+      font-size: 12px;
+      padding: 4px;
+    }
+
+    .help {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      margin: 12px 0 0;
+    }
+
+    @media (max-width: 520px) {
+      header h1 { font-size: 22px; }
+      .panel { padding: 12px; }
+      #chat { height: 350px; }
+      button, .file-label { padding: 10px 12px; }
+    }
+  </style>
 </head>
+
 <body>
+<header>
+  <h1>Vox<span>Bridge</span></h1>
+  <p>Voice Without Barriers · Experimental Transcription</p>
+</header>
+
 <main>
-  <header>
-    <div class="brand">
-      <div class="logo">≋</div>
-      <div>
-        <h1>Vox<span class="bridge">Bridge</span></h1>
-        <div class="tagline">VOICE WITHOUT BARRIERS · TEST BUILD</div>
-      </div>
+  <section class="panel">
+    <h2 class="section-title">Live Transcription</h2>
+
+    <div class="controls" style="margin-top:12px">
+      <button id="startButton" disabled>Start Listening</button>
+      <button id="stopButton" class="stop" disabled>Stop Listening</button>
+      <button id="clearButton" class="secondary">New Conversation</button>
     </div>
-    <p class="intro">
-      Experimental English and Spanish speech transcription.
-      This test focuses on filtering silence and reducing false words.
+
+    <div id="status">Loading Whisper Base. The first download may take several minutes.</div>
+    <div class="progress"><div id="progressBar"></div></div>
+
+    <p class="help">
+      Select the browser tab playing your audio and enable
+      <strong>Share tab audio</strong>. Keep this page open during the test.
+      English and Spanish are processed with automatic multilingual recognition.
     </p>
-  </header>
+  </section>
 
   <section class="panel">
-    <h2>01 / Initialize Voice Engine</h2>
-    <p class="small">Load the multilingual Whisper Tiny model. The first download may take several minutes.</p>
-    <button id="loadButton">Initialize VoxBridge Test</button>
-    <div id="status" class="status" role="status" aria-live="polite">Engine not loaded.</div>
-
-    <div class="divider"></div>
-
-    <h2>02 / Audio File Transcription</h2>
-    <p class="small">Optional: transcribe an existing audio file.</p>
-    <input id="audioFile" type="file" accept="audio/*">
-    <button id="fileButton" disabled>Transcribe Audio File</button>
-    <div id="fileOutput" class="status">Your file transcription will appear here.</div>
-
-    <div class="divider"></div>
-
-    <h2>03 / Live Conversation</h2>
-    <p class="small">
-      Start live audio, select your YouTube tab, and enable
-      <strong>Share tab audio</strong>. Keep this page open.
-    </p>
-    <div class="pill" id="livePill">● STANDBY</div>
-    <button id="startButton" disabled>Start Live Audio</button>
-    <button id="stopButton" class="stop" disabled>Stop Live Audio</button>
-    <div id="liveStatus" class="status" role="status" aria-live="polite">Live capture is stopped.</div>
-
-    <div class="chat-shell">
-      <div class="chat-header">
-        <strong>VoxBridge / Conversation</strong>
-        <button id="clearButton" class="secondary">＋ New Conversation</button>
-      </div>
-      <div id="messages" class="chat-messages" role="log" aria-live="polite">
-        <div id="emptyMessage" class="empty">
-          Your conversation will appear here.<br>Start live audio to begin.
-        </div>
-      </div>
-      <div class="chat-footer">ENGLISH · BLUE / ESPAÑOL · TEAL</div>
+    <div class="chat-heading">
+      <h2>Conversation</h2>
+      <span id="messageCount" style="color:var(--muted);font-size:12px">0 messages</span>
+    </div>
+    <div id="chat" aria-live="polite">
+      <div class="message system">Transcription results will appear here.</div>
     </div>
   </section>
 
-  <div class="notice">
-    <strong>Experimental build:</strong> Silence filtering uses audio energy,
-    not a certified speech detector. Quiet speech may be missed, and speech
-    recognition can still be inaccurate. Model software is downloaded from
-    external hosting. Do not use sensitive or confidential recordings.
-  </div>
+  <section class="panel">
+    <h2 class="section-title">Transcribe an Audio File</h2>
+    <div class="controls" style="margin-top:12px">
+      <label for="audioFile" class="file-label">Choose Audio File</label>
+      <input id="audioFile" type="file" accept="audio/*,video/*">
+      <button id="fileButton" disabled>Transcribe File</button>
+    </div>
+    <div id="fileStatus">File transcription is optional.</div>
+  </section>
 </main>
 
 <script type="module">
-import { pipeline, env } from
-  "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+import {
+  pipeline,
+  env
+} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+
+const MODEL = "Xenova/whisper-base";
+const LIVE_CHUNK_SECONDS = 8;
+const LIVE_OVERLAP_SECONDS = 1;
+const FILE_CHUNK_SECONDS = 20;
+
+// Audio screening thresholds, not a full speech detector.
+const FRAME_MS = 20;
+const MIN_FRAME_RMS = 0.008;
+const MIN_ACTIVE_FRACTION = 0.12;
+const MIN_PEAK_RMS = 0.015;
 
 const $ = id => document.getElementById(id);
-const loadButton = $("loadButton");
+
+const startButton = $("startButton");
+const stopButton = $("stopButton");
+const clearButton = $("clearButton");
 const fileButton = $("fileButton");
 const audioFile = $("audioFile");
-const statusBox = $("status");
-const fileOutput = $("fileOutput");
-const liveStatus = $("liveStatus");
-const livePill = $("livePill");
-const messages = $("messages");
-const emptyMessage = $("emptyMessage");
-
-const RATE = 16000;
-const CHUNK_SECONDS = 10;
-const OVERLAP_SECONDS = 2;
-const MAX_QUEUE = 2;
-
-// Voice activity tuning:
-const FRAME_MS = 250;
-const MIN_SPEECH_FRAMES = 2;
-const ABSOLUTE_RMS_THRESHOLD = 0.008;
-const SPEECH_PADDING_MS = 350;
+const statusEl = $("status");
+const fileStatus = $("fileStatus");
+const chat = $("chat");
+const countEl = $("messageCount");
+const progressBar = $("progressBar");
 
 let transcriber = null;
-let stream = null;
+let isListening = false;
+let isProcessing = false;
+let isTranscribingFile = false;
+let stopRequested = false;
+
+let displayStream = null;
 let audioContext = null;
-let source = null;
-let processor = null;
+let sourceNode = null;
+let processorNode = null;
 let silentGain = null;
 
-let captureSamples = [];
-let sampleCount = 0;
-let live = false;
-let processing = false;
-let session = 0;
-let generation = 0;
+let sampleBuffers = [];
+let totalSamples = 0;
+let samplesSinceChunk = 0;
+let sampleRate = 0;
+
 let queue = [];
-let completed = 0;
-let skipped = 0;
-let dropped = 0;
-let inferenceTotal = 0;
-let lastText = "";
-let lastLanguage = "unknown";
+let messageCount = 0;
+let chunkNumber = 0;
+let previousLiveText = "";
+let lastAcceptedText = "";
+let lastAcceptedAt = 0;
 
-env.allowLocalModels = false;
-env.allowRemoteModels = true;
-
-loadButton.addEventListener("click", async () => {
-  loadButton.disabled = true;
-  statusBox.classList.remove("error");
-  statusBox.textContent = "Downloading and initializing Whisper Tiny...";
-
-  try {
-    transcriber = await pipeline(
-      "automatic-speech-recognition",
-      "Xenova/whisper-tiny",
-      { dtype: "q8" }
-    );
-    statusBox.textContent = "Voice engine ready.";
-    loadButton.textContent = "Voice Engine Ready";
-    fileButton.disabled = !audioFile.files.length;
-    $("startButton").disabled = false;
-  } catch (error) {
-    statusBox.classList.add("error");
-    statusBox.textContent = "Model load failed: " + error.message;
-    loadButton.disabled = false;
-  }
-});
-
-audioFile.addEventListener("change", () => {
-  fileButton.disabled = !transcriber || !audioFile.files.length;
-});
-
-function rmsOf(samples, start, end) {
-  let sum = 0;
-  let count = 0;
-  for (let i = start; i < end; i++) {
-    const value = samples[i];
-    sum += value * value;
-    count++;
-  }
-  return count ? Math.sqrt(sum / count) : 0;
+function setStatus(text) {
+  statusEl.textContent = text;
 }
 
-/*
- * Find energetic audio frames, trim silence around them, and reject chunks
- * with too few active frames. This is an energy gate, not full linguistic VAD.
- */
-function filterAndTrimSpeech(samples, sampleRate) {
-  const frameSize = Math.max(1, Math.floor(sampleRate * FRAME_MS / 1000));
-  const frames = [];
-  let peakRms = 0;
-
-  for (let start = 0; start < samples.length; start += frameSize) {
-    const end = Math.min(samples.length, start + frameSize);
-    const rms = rmsOf(samples, start, end);
-    frames.push({ start, end, rms });
-    if (rms > peakRms) peakRms = rms;
-  }
-
-  if (!frames.length || peakRms < ABSOLUTE_RMS_THRESHOLD) {
-    return { speech: false, reason: "low energy" };
-  }
-
-  // Relative threshold adapts slightly to quieter recordings while keeping
-  // a minimum threshold to reject near-silent digital noise.
-  const threshold = Math.max(
-    ABSOLUTE_RMS_THRESHOLD,
-    peakRms * 0.12
-  );
-
-  const activeFrames = frames.filter(frame => frame.rms >= threshold);
-
-  if (activeFrames.length < MIN_SPEECH_FRAMES) {
-    return { speech: false, reason: "too few active frames" };
-  }
-
-  const padding = Math.floor(sampleRate * SPEECH_PADDING_MS / 1000);
-  const first = Math.max(0, activeFrames[0].start - padding);
-  const last = Math.min(
-    samples.length,
-    activeFrames[activeFrames.length - 1].end + padding
-  );
-
-  if (last <= first) {
-    return { speech: false, reason: "empty trimmed audio" };
-  }
-
-  const trimmed = samples.slice(first, last);
-  const trimmedDuration = trimmed.length / sampleRate;
-
-  if (trimmedDuration < 0.45) {
-    return { speech: false, reason: "speech segment too short" };
-  }
-
-  return {
-    speech: true,
-    samples: trimmed,
-    originalDuration: samples.length / sampleRate,
-    trimmedDuration,
-    activeFrames: activeFrames.length,
-    totalFrames: frames.length
-  };
+function systemMessage(text) {
+  const el = document.createElement("div");
+  el.className = "message system";
+  el.textContent = text;
+  chat.appendChild(el);
+  chat.scrollTop = chat.scrollHeight;
 }
 
-async function resample(samples, inputRate) {
-  if (inputRate === RATE) return new Float32Array(samples);
-
-  const buffer = new AudioBuffer({
-    numberOfChannels: 1,
-    length: samples.length,
-    sampleRate: inputRate
-  });
-  buffer.copyToChannel(samples, 0);
-
-  const length = Math.max(1, Math.ceil(samples.length * RATE / inputRate));
-  const offline = new OfflineAudioContext(1, length, RATE);
-  const node = offline.createBufferSource();
-  node.buffer = buffer;
-  node.connect(offline.destination);
-  node.start();
-
-  const rendered = await offline.startRendering();
-  return new Float32Array(rendered.getChannelData(0));
+function normalizeText(text) {
+  return (text || "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function languageLabel(text) {
-  const lower = " " + (text || "").toLowerCase().replace(/\s+/g, " ") + " ";
-  const esMarkers = [
-    " el ", " la ", " los ", " las ", " una ", " de ", " del ",
-    " que ", " y ", " pero ", " porque ", " está ", " tengo ",
-    " para ", " por ", " con ", " usted ", " quiero ", " gracias ",
-    " hola ", " también ", " puede ", " entonces ", " hay ", " son "
-  ];
-  const enMarkers = [
-    " the ", " and ", " is ", " are ", " you ", " your ", " have ",
-    " with ", " for ", " that ", " this ", " what ", " where ",
-    " when ", " how ", " can ", " would ", " will ", " hello ",
-    " thanks ", " please ", " there ", " they "
-  ];
+function detectLanguageLabel(text) {
+  const spanishWords =
+    /\b(hola|qué|como|cómo|cual|cuál|donde|dónde|cuando|cuándo|por|para|usted|ustedes|gracias|buenos|buenas|nombre|nacimiento|teléfono|numero|número|seguro|vida|sí|esta|está|tiene|ninguno|ninguna|cuido|dieta|noviembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|diciembre|del|con|tengo|tiene|puede|quiero|necesita|pero|porque|entonces|ahora|también|familia|fecha|enfermedad|diabetes|corazón|enfermedades|no|me|mi|es|el|la|los|las|un|una|y)\b/i.test(text);
 
-  let es = esMarkers.filter(word => lower.includes(word)).length;
-  let en = enMarkers.filter(word => lower.includes(word)).length;
+  const englishWords =
+    /\b(the|what|when|where|who|why|how|your|you|are|is|was|were|have|has|hello|name|date|birth|best|contact|number|insurance|life|thank|thanks|please|can|would|could|does|and|for|with|this|that|we|they|my|me|it|not|chronic|medical|conditions|like|asthma|heart|disease|results|patient)\b/i.test(text);
 
-  if (/[¿¡áéíóúüñ]/i.test(text || "")) es += 2;
-  if (es >= en + 1) return "spanish";
-  if (en >= es + 1) return "english";
+  if (spanishWords && !englishWords) return "spanish";
+  if (englishWords && !spanishWords) return "english";
   return "unknown";
 }
 
-function cleanOverlap(previous, current) {
-  const a = (previous || "").trim().split(/\s+/).filter(Boolean);
-  const b = (current || "").trim().split(/\s+/).filter(Boolean);
-  const norm = word => word.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
-  const limit = Math.min(12, a.length, b.length);
+function addMessage(text) {
+  const clean = (text || "").trim();
+  if (!clean) return;
 
-  for (let n = limit; n > 0; n--) {
-    const tail = a.slice(-n).map(norm);
-    const head = b.slice(0, n).map(norm);
-    if (tail.every((word, i) => word && word === head[i])) {
-      return b.slice(n).join(" ");
-    }
+  const language = detectLanguageLabel(clean);
+  const el = document.createElement("div");
+  const label = document.createElement("div");
+  const body = document.createElement("div");
+
+  el.className = "message " + language;
+  label.className = "language";
+  label.textContent =
+    language === "english" ? "English" :
+    language === "spanish" ? "Español" :
+    "Language uncertain";
+
+  body.textContent = clean;
+  el.append(label, body);
+  chat.appendChild(el);
+
+  messageCount++;
+  countEl.textContent =
+    messageCount + (messageCount === 1 ? " message" : " messages");
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function setProgress(value) {
+  progressBar.style.width = Math.max(0, Math.min(100, value)) + "%";
+}
+
+async function loadModel() {
+  try {
+    env.allowLocalModels = false;
+    env.useBrowserCache = true;
+
+    setStatus("Downloading/loading Whisper Base. First load can be large...");
+
+    transcriber = await pipeline(
+      "automatic-speech-recognition",
+      MODEL,
+      {
+        dtype: "q8",
+        progress_callback: p => {
+          if (p.status === "progress" && typeof p.progress === "number") {
+            setProgress(p.progress);
+          }
+          if (p.status === "downloading") {
+            setStatus("Downloading model file: " + p.file);
+          }
+        }
+      }
+    );
+
+    setProgress(100);
+    setStatus("Whisper Base is ready. You can test live audio or a file.");
+    startButton.disabled = false;
+    fileButton.disabled = false;
+  } catch (err) {
+    console.error(err);
+    setStatus(
+      "Model failed to load. Check your internet connection and refresh. " +
+      (err.message || "")
+    );
   }
-  return b.join(" ");
 }
 
-function appendMessage(text, currentGeneration) {
-  if (currentGeneration !== generation) return;
-  text = (text || "").trim();
-  if (!text) return;
+function mergeBuffers(buffers, length) {
+  const out = new Float32Array(length);
+  let offset = 0;
 
-  const language = languageLabel(text);
-  const comparisonText = language === lastLanguage ? lastText : "";
-  const cleaned = cleanOverlap(comparisonText, text);
-  if (!cleaned.trim()) return;
-
-  emptyMessage.style.display = "none";
-
-  const bubble = document.createElement("div");
-  bubble.className = "bubble " + language;
-
-  const label = document.createElement("span");
-  label.className = "bubble-label";
-  label.textContent = language === "english" ? "English" :
-    language === "spanish" ? "Español" : "Language uncertain";
-
-  const content = document.createElement("span");
-  content.textContent = cleaned;
-
-  bubble.append(label, content);
-  messages.appendChild(bubble);
-  messages.scrollTop = messages.scrollHeight;
-
-  lastText = text;
-  lastLanguage = language;
+  for (const buffer of buffers) {
+    out.set(buffer, offset);
+    offset += buffer.length;
+  }
+  return out;
 }
 
-function updateStatus(message) {
-  liveStatus.classList.remove("error");
-  liveStatus.textContent =
-    message +
-    "\nCompleted: " + completed +
-    " | Skipped silence: " + skipped +
-    " | Dropped queue: " + dropped +
-    " | Average inference: " +
-    (completed ? (inferenceTotal / completed).toFixed(1) + " s" : "—");
+function rms(samples) {
+  if (!samples.length) return 0;
+  let sum = 0;
+  for (let i = 0; i < samples.length; i++) sum += samples[i] ** 2;
+  return Math.sqrt(sum / samples.length);
 }
 
-async function runQueue(mySession) {
-  if (processing || !live || mySession !== session) return;
-  processing = true;
+function speechCheck(samples, rate) {
+  const frameSize = Math.max(1, Math.floor(rate * FRAME_MS / 1000));
+  let activeFrames = 0;
+  let frames = 0;
+  let peak = 0;
+
+  for (let i = 0; i < samples.length; i += frameSize) {
+    const frame = samples.subarray(i, Math.min(i + frameSize, samples.length));
+    const level = rms(frame);
+    frames++;
+    peak = Math.max(peak, level);
+    if (level >= MIN_FRAME_RMS) activeFrames++;
+  }
+
+  const fraction = frames ? activeFrames / frames : 0;
+
+  return {
+    hasSpeechLikeAudio:
+      fraction >= MIN_ACTIVE_FRACTION && peak >= MIN_PEAK_RMS,
+    fraction,
+    peak
+  };
+}
+
+function trimQuietEdges(samples, rate) {
+  const frameSize = Math.max(1, Math.floor(rate * FRAME_MS / 1000));
+  const threshold = MIN_FRAME_RMS * 0.7;
+  let start = 0;
+  let end = samples.length;
+
+  while (start < end) {
+    const stop = Math.min(start + frameSize, end);
+    if (rms(samples.subarray(start, stop)) >= threshold) break;
+    start = stop;
+  }
+
+  while (end > start) {
+    const begin = Math.max(start, end - frameSize);
+    if (rms(samples.subarray(begin, end)) >= threshold) break;
+    end = begin;
+  }
+
+  return end > start ? samples.slice(start, end) : new Float32Array(0);
+}
+
+function resampleTo16k(input, inputRate) {
+  const outputRate = 16000;
+  if (inputRate === outputRate) return input;
+
+  const ratio = inputRate / outputRate;
+  const length = Math.floor(input.length / ratio);
+  const output = new Float32Array(length);
+
+  for (let i = 0; i < length; i++) {
+    const position = i * ratio;
+    const left = Math.floor(position);
+    const right = Math.min(left + 1, input.length - 1);
+    const fraction = position - left;
+    output[i] = input[left] * (1 - fraction) + input[right] * fraction;
+  }
+  return output;
+}
+
+// Reject obvious decoding loops instead of displaying hundreds of repeated words.
+function rejectRepetitiveOutput(text) {
+  const words = normalizeText(text).split(" ").filter(Boolean);
+  if (words.length < 6) return false;
+
+  const counts = new Map();
+  for (const word of words) counts.set(word, (counts.get(word) || 0) + 1);
+
+  const highestCount = Math.max(...counts.values());
+  if (highestCount >= 8 && highestCount / words.length > 0.45) return true;
+
+  // Detect a phrase looping over and over, such as "the number of the number of".
+  for (let size = 2; size <= 6; size++) {
+    if (words.length < size * 3) continue;
+
+    const phrase = words.slice(0, size).join(" ");
+    let matches = 0;
+
+    for (let i = 0; i + size <= words.length; i += size) {
+      if (words.slice(i, i + size).join(" ") === phrase) matches++;
+      else break;
+    }
+
+    if (matches >= 3) return true;
+  }
+
+  return false;
+}
+
+function removeOverlap(previous, next) {
+  const a = normalizeText(previous).split(" ").filter(Boolean);
+  const b = (next || "").trim().split(/\s+/).filter(Boolean);
+  const max = Math.min(12, a.length, b.length);
+
+  for (let n = max; n >= 2; n--) {
+    const tail = a.slice(-n).join(" ");
+    const head = b.slice(0, n).join(" ").toLowerCase();
+    if (tail === head) return b.slice(n).join(" ");
+  }
+
+  return (next || "").trim();
+}
+
+function cleanLiveResult(text) {
+  let clean = (text || "").trim();
+  if (!clean) return "";
+
+  if (rejectRepetitiveOutput(clean)) {
+    systemMessage("Skipped a segment with obvious repeated-word hallucinations.");
+    return "";
+  }
+
+  clean = removeOverlap(previousLiveText, clean).trim();
+  if (!clean) return "";
+
+  const normalized = normalizeText(clean);
+  const now = Date.now();
+
+  // Avoid printing the same result repeatedly across adjacent chunks.
+  if (
+    normalized.length > 0 &&
+    normalized === normalizeText(lastAcceptedText) &&
+    now - lastAcceptedAt < 15000
+  ) {
+    return "";
+  }
+
+  // Also suppress a near-exact repeat if one result contains the other.
+  const prior = normalizeText(lastAcceptedText);
+  if (
+    normalized.length > 12 &&
+    prior.length > 12 &&
+    (normalized.includes(prior) || prior.includes(normalized)) &&
+    now - lastAcceptedAt < 12000
+  ) {
+    return "";
+  }
+
+  previousLiveText = text.trim();
+  lastAcceptedText = clean;
+  lastAcceptedAt = now;
+  return clean;
+}
+
+async function transcribeSamples(samples, rate, sourceLabel) {
+  if (!transcriber || !samples || !samples.length) return "";
+
+  const activity = speechCheck(samples, rate);
+
+  // Do not run Whisper on chunks with little sustained audio activity.
+  if (!activity.hasSpeechLikeAudio) return "";
+
+  const trimmed = trimQuietEdges(samples, rate);
+  if (!trimmed.length) return "";
+
+  const audio16k = resampleTo16k(trimmed, rate);
+  if (!audio16k.length) return "";
 
   try {
-    while (live && mySession === session && queue.length) {
-      const item = queue.shift();
-      if (item.generation !== generation) continue;
-
-      const filtered = filterAndTrimSpeech(item.samples, item.sampleRate);
-      if (!filtered.speech) {
-        skipped++;
-        updateStatus("Skipped a chunk with insufficient speech energy.");
-        continue;
-      }
-
-      updateStatus(
-        "Speech detected. Preparing " +
-        filtered.trimmedDuration.toFixed(1) + " seconds of audio..."
-      );
-
-      const whisperSamples = await resample(filtered.samples, item.sampleRate);
-      if (!live || mySession !== session) break;
-      if (item.generation !== generation) continue;
-
-      updateStatus("Transcribing speech with automatic language detection...");
-      const started = performance.now();
-
-      const result = await transcriber(whisperSamples, {
-        sampling_rate: RATE,
-        task: "transcribe",
-        return_timestamps: false
-      });
-
-      const elapsed = (performance.now() - started) / 1000;
-      inferenceTotal += elapsed;
-      completed++;
-
-      if (!live || mySession !== session) break;
-      if (item.generation === generation) appendMessage(result.text, item.generation);
-
-      updateStatus(
-        "Processed " + filtered.trimmedDuration.toFixed(1) +
-        " seconds of detected audio in " + elapsed.toFixed(1) + " seconds."
-      );
-    }
-  } catch (error) {
-    if (mySession === session) {
-      liveStatus.classList.add("error");
-      liveStatus.textContent = "Transcription error: " + error.message;
-    }
-  } finally {
-    processing = false;
-    $("startButton").disabled = !transcriber || live;
-    $("stopButton").disabled = !live;
-
-    if (live && mySession === session && queue.length) {
-      void runQueue(mySession);
-    } else if (live && mySession === session) {
-      updateStatus("Listening. Waiting for the next audio chunk.");
-    }
-  }
-}
-
-async function stopLive(message = "Live capture stopped.") {
-  live = false;
-  session++;
-  queue = [];
-
-  if (processor) {
-    processor.onaudioprocess = null;
-    try { processor.disconnect(); } catch (_) {}
-    processor = null;
-  }
-  if (source) {
-    try { source.disconnect(); } catch (_) {}
-    source = null;
-  }
-  if (silentGain) {
-    try { silentGain.disconnect(); } catch (_) {}
-    silentGain = null;
-  }
-  if (stream) {
-    stream.getTracks().forEach(track => {
-      try { track.stop(); } catch (_) {}
-    });
-    stream = null;
-  }
-  if (audioContext && audioContext.state !== "closed") {
-    try { await audioContext.close(); } catch (_) {}
-  }
-
-  audioContext = null;
-  captureSamples = [];
-  sampleCount = 0;
-
-  livePill.textContent = "● STANDBY";
-  $("startButton").disabled = !transcriber || processing;
-  $("stopButton").disabled = true;
-  liveStatus.classList.remove("error");
-  liveStatus.textContent = message;
-}
-
-fileButton.addEventListener("click", async () => {
-  const file = audioFile.files[0];
-  if (!file || !transcriber) return;
-
-  fileButton.disabled = true;
-  fileOutput.textContent = "Reading audio file...";
-  let context;
-
-  try {
-    const bytes = await file.arrayBuffer();
-    context = new AudioContext();
-    const decoded = await context.decodeAudioData(bytes);
-
-    const mono = new Float32Array(decoded.length);
-    for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
-      const data = decoded.getChannelData(channel);
-      for (let i = 0; i < data.length; i++) {
-        mono[i] += data[i] / decoded.numberOfChannels;
-      }
-    }
-
-    const prepared = await resample(mono, decoded.sampleRate);
-    fileOutput.textContent = "Transcribing with automatic language detection...";
-
-    const result = await transcriber(prepared, {
-      sampling_rate: RATE,
+    const result = await transcriber(audio16k, {
+      sampling_rate: 16000,
       task: "transcribe",
-      return_timestamps: false
+      return_timestamps: false,
+      repetition_penalty: 1.05
     });
 
-    fileOutput.textContent = (result.text || "").trim() || "(No speech detected.)";
-  } catch (error) {
-    fileOutput.classList.add("error");
-    fileOutput.textContent = "File transcription failed: " + error.message;
-  } finally {
-    if (context && context.state !== "closed") {
-      try { await context.close(); } catch (_) {}
+    const text = (result.text || "").trim();
+
+    if (sourceLabel === "live") {
+      return cleanLiveResult(text);
     }
-    fileButton.disabled = !transcriber || !audioFile.files.length;
+
+    if (rejectRepetitiveOutput(text)) {
+      return "";
+    }
+
+    return text;
+  } catch (err) {
+    console.error("Transcription error:", err);
+    throw err;
   }
-});
+}
 
-$("clearButton").addEventListener("click", () => {
-  generation++;
-  lastText = "";
-  lastLanguage = "unknown";
-  queue = [];
+function enqueueChunk(samples) {
+  if (!samples || !samples.length) return;
 
-  messages.querySelectorAll(".bubble").forEach(element => element.remove());
-  emptyMessage.style.display = "block";
+  queue.push({
+    samples,
+    rate: sampleRate,
+    id: ++chunkNumber
+  });
 
-  updateStatus(live
-    ? "New conversation. Live audio capture continues."
-    : "Conversation cleared.");
-});
+  // Keep the queue short if the model is slower than the incoming audio.
+  if (queue.length > 2) {
+    queue.shift();
+    systemMessage("Skipped a delayed segment to keep live audio moving.");
+  }
 
-$("startButton").addEventListener("click", async () => {
-  if (!transcriber || live) return;
+  processQueue();
+}
+
+async function processQueue() {
+  if (isProcessing) return;
+  isProcessing = true;
+
+  try {
+    while (queue.length) {
+      const item = queue.shift();
+      setStatus("Listening... processing live segment " + item.id);
+
+      const text = await transcribeSamples(item.samples, item.rate, "live");
+      if (text) addMessage(text);
+    }
+  } finally {
+    isProcessing = false;
+
+    if (isListening) {
+      setStatus("Listening for English and Spanish speech...");
+    } else if (!isTranscribingFile) {
+      setStatus("Listening stopped. Model is ready.");
+    }
+  }
+}
+
+function handleAudioInput(event) {
+  if (!isListening) return;
+
+  const input = event.inputBuffer.getChannelData(0);
+  const copy = new Float32Array(input);
+
+  sampleBuffers.push(copy);
+  totalSamples += copy.length;
+  samplesSinceChunk += copy.length;
+
+  const chunkSize = LIVE_CHUNK_SECONDS * sampleRate;
+  const stepSize =
+    (LIVE_CHUNK_SECONDS - LIVE_OVERLAP_SECONDS) * sampleRate;
+
+  if (totalSamples >= chunkSize && samplesSinceChunk >= stepSize) {
+    const all = mergeBuffers(sampleBuffers, totalSamples);
+    const chunk = all.slice(0, chunkSize);
+    const overlap = all.slice(chunkSize - LIVE_OVERLAP_SECONDS * sampleRate);
+
+    enqueueChunk(chunk);
+
+    sampleBuffers = [overlap];
+    totalSamples = overlap.length;
+    samplesSinceChunk = 0;
+  }
+}
+
+async function startListening() {
+  if (isListening || !transcriber) return;
 
   if (!navigator.mediaDevices?.getDisplayMedia) {
-    liveStatus.textContent = "Browser-tab audio capture is not supported in this browser.";
+    setStatus("This browser does not support tab audio capture.");
     return;
   }
 
-  $("startButton").disabled = true;
-  liveStatus.textContent = "Select a browser tab and enable Share tab audio.";
-
   try {
-    stream = await navigator.mediaDevices.getDisplayMedia({
+    displayStream = await navigator.mediaDevices.getDisplayMedia({
       video: true,
       audio: true
     });
 
-    const audioTracks = stream.getAudioTracks();
-    if (!audioTracks.length) {
-      stream.getTracks().forEach(track => track.stop());
-      stream = null;
-      liveStatus.textContent =
-        "No tab audio received. Try again and enable Share tab audio.";
-      $("startButton").disabled = false;
+    if (!displayStream.getAudioTracks().length) {
+      displayStream.getTracks().forEach(track => track.stop());
+      displayStream = null;
+      setStatus("No shared audio detected. Try again and enable Share tab audio.");
       return;
     }
 
-    session++;
-    const mySession = session;
-    live = true;
-    queue = [];
-    captureSamples = [];
-    sampleCount = 0;
-    completed = skipped = dropped = inferenceTotal = 0;
-    lastText = "";
-    lastLanguage = "unknown";
-
     audioContext = new AudioContext();
-    await audioContext.resume();
+    sampleRate = audioContext.sampleRate;
 
-    source = audioContext.createMediaStreamSource(new MediaStream(audioTracks));
-    processor = audioContext.createScriptProcessor(4096, 1, 1);
-
-    const inputRate = audioContext.sampleRate;
-    const chunkSize = Math.floor(inputRate * CHUNK_SECONDS);
-    const overlapSize = Math.floor(inputRate * OVERLAP_SECONDS);
-    const stepSize = chunkSize - overlapSize;
-
-    processor.onaudioprocess = event => {
-      if (!live || mySession !== session) return;
-
-      const input = event.inputBuffer.getChannelData(0);
-      for (let i = 0; i < input.length; i++) captureSamples.push(input[i]);
-      sampleCount += input.length;
-
-      while (sampleCount >= chunkSize) {
-        const chunk = new Float32Array(captureSamples.slice(0, chunkSize));
-
-        captureSamples.splice(0, stepSize);
-        sampleCount -= stepSize;
-
-        if (queue.length >= MAX_QUEUE) {
-          queue.shift();
-          dropped++;
-        }
-
-        queue.push({
-          samples: chunk,
-          sampleRate: inputRate,
-          generation
-        });
-
-        if (!processing) void runQueue(mySession);
-      }
-    };
-
-    source.connect(processor);
+    sourceNode = audioContext.createMediaStreamSource(displayStream);
+    processorNode = audioContext.createScriptProcessor(4096, 1, 1);
     silentGain = audioContext.createGain();
     silentGain.gain.value = 0;
-    processor.connect(silentGain);
+
+    sampleBuffers = [];
+    totalSamples = 0;
+    samplesSinceChunk = 0;
+    queue = [];
+    previousLiveText = "";
+    lastAcceptedText = "";
+    chunkNumber = 0;
+
+    processorNode.onaudioprocess = handleAudioInput;
+    sourceNode.connect(processorNode);
+    processorNode.connect(silentGain);
     silentGain.connect(audioContext.destination);
 
-    stream.getTracks().forEach(track => {
-      track.addEventListener("ended", () => {
-        if (live && mySession === session) {
-          void stopLive("Browser-tab sharing ended.");
-        }
-      });
+    displayStream.getVideoTracks().forEach(track => {
+      track.addEventListener("ended", stopListening);
     });
 
-    livePill.textContent = "● LISTENING";
-    $("startButton").disabled = true;
-    $("stopButton").disabled = false;
-    updateStatus("Live capture started. Play your test video.");
-  } catch (error) {
-    await stopLive(
-      "Could not start capture: " + error.message +
-      ". Select a tab and enable Share tab audio."
-    );
+    isListening = true;
+    startButton.disabled = true;
+    stopButton.disabled = false;
+    setStatus("Listening. Play the audio in the shared tab.");
+
+  } catch (err) {
+    console.error(err);
+    setStatus("Audio sharing was cancelled or failed: " + err.message);
+    await stopListening();
   }
+}
+
+async function stopListening() {
+  isListening = false;
+  stopRequested = true;
+
+  if (processorNode) {
+    processorNode.onaudioprocess = null;
+    try { processorNode.disconnect(); } catch {}
+    processorNode = null;
+  }
+
+  if (sourceNode) {
+    try { sourceNode.disconnect(); } catch {}
+    sourceNode = null;
+  }
+
+  if (silentGain) {
+    try { silentGain.disconnect(); } catch {}
+    silentGain = null;
+  }
+
+  if (displayStream) {
+    displayStream.getTracks().forEach(track => track.stop());
+    displayStream = null;
+  }
+
+  if (audioContext) {
+    try { await audioContext.close(); } catch {}
+    audioContext = null;
+  }
+
+  // Process any remaining captured audio once, without waiting for a full chunk.
+  if (totalSamples > 0 && sampleRate) {
+    const remaining = mergeBuffers(sampleBuffers, totalSamples);
+    if (remaining.length > sampleRate * 0.5) {
+      queue.push({ samples: remaining, rate: sampleRate, id: ++chunkNumber });
+    }
+  }
+
+  sampleBuffers = [];
+  totalSamples = 0;
+  samplesSinceChunk = 0;
+
+  startButton.disabled = !transcriber;
+  stopButton.disabled = true;
+  stopRequested = false;
+
+  processQueue();
+}
+
+async function transcribeFile() {
+  const file = audioFile.files?.[0];
+  if (!file || !transcriber || isTranscribingFile) return;
+
+  if (isListening) {
+    fileStatus.textContent = "Stop live listening before transcribing a file.";
+    return;
+  }
+
+  isTranscribingFile = true;
+  fileButton.disabled = true;
+  fileStatus.textContent = "Opening audio file...";
+
+  let fileContext = null;
+
+  try {
+    fileContext = new AudioContext();
+    const bytes = await file.arrayBuffer();
+    const decoded = await fileContext.decodeAudioData(bytes);
+
+    const channels = [];
+    for (let c = 0; c < decoded.numberOfChannels; c++) {
+      channels.push(decoded.getChannelData(c));
+    }
+
+    const mono = new Float32Array(decoded.length);
+
+    for (let i = 0; i < decoded.length; i++) {
+      let sum = 0;
+      for (const channel of channels) sum += channel[i];
+      mono[i] = sum / channels.length;
+    }
+
+    const fileRate = decoded.sampleRate;
+    const chunkSamples = FILE_CHUNK_SECONDS * fileRate;
+    const parts = [];
+    const totalParts = Math.ceil(mono.length / chunkSamples);
+
+    for (let start = 0; start < mono.length; start += chunkSamples) {
+      const end = Math.min(start + chunkSamples, mono.length);
+      const segment = mono.slice(start, end);
+
+      fileStatus.textContent =
+        "Transcribing segment " + (parts.length + 1) + " of " + totalParts + "...";
+
+      const text = await transcribeSamples(segment, fileRate, "file");
+      if (text) parts.push(text);
+    }
+
+    if (parts.length) {
+      addMessage(parts.join(" "));
+      fileStatus.textContent = "File transcription finished.";
+    } else {
+      fileStatus.textContent =
+        "No reliable speech was detected in the file. Try a clearer recording.";
+    }
+
+  } catch (err) {
+    console.error(err);
+    fileStatus.textContent =
+      "Could not transcribe this file. Try a different audio/video format. " +
+      (err.message || "");
+  } finally {
+    if (fileContext) {
+      try { await fileContext.close(); } catch {}
+    }
+
+    isTranscribingFile = false;
+    fileButton.disabled = !transcriber;
+  }
+}
+
+startButton.addEventListener("click", startListening);
+stopButton.addEventListener("click", stopListening);
+
+clearButton.addEventListener("click", () => {
+  chat.innerHTML = "";
+  messageCount = 0;
+  countEl.textContent = "0 messages";
+  previousLiveText = "";
+  lastAcceptedText = "";
+  lastAcceptedAt = 0;
+  systemMessage("New conversation started.");
 });
 
-$("stopButton").addEventListener("click", () => {
-  void stopLive("Live audio stopped.");
+fileButton.addEventListener("click", transcribeFile);
+
+audioFile.addEventListener("change", () => {
+  const file = audioFile.files?.[0];
+  fileStatus.textContent = file
+    ? "Selected: " + file.name
+    : "File transcription is optional.";
 });
 
 window.addEventListener("beforeunload", () => {
-  if (stream) stream.getTracks().forEach(track => track.stop());
-  if (audioContext && audioContext.state !== "closed") {
-    audioContext.close();
+  if (displayStream) {
+    displayStream.getTracks().forEach(track => track.stop());
   }
 });
+
+loadModel();
 </script>
 </body>
 </html>
