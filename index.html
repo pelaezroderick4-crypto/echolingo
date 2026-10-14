@@ -107,7 +107,6 @@
     }
 
     h3 { margin: 0; font-size: 15px; }
-
     p { line-height: 1.6; }
 
     .muted, .small {
@@ -727,60 +726,123 @@
 
   function normalizeDetectedLanguage(value) {
     const language = String(value || "").toLowerCase().trim();
+    if (language === "en" || language.startsWith("english")) return "english";
+    if (language === "es" || language.startsWith("spanish") ||
+        language.startsWith("español")) return "spanish";
+    return "unknown";
+  }
 
-    if (language === "en" || language.startsWith("english")) {
-      return "english";
+  // Score transcripts for language clues. This is a heuristic, not a
+  // guaranteed detector, but it can help compare two constrained passes.
+  const LANGUAGE_MARKERS = {
+    spanish: [
+      " el ", " la ", " los ", " las ", " un ", " una ", " unos ", " unas ",
+      " de ", " del ", " que ", " y ", " pero ", " porque ", " como ",
+      " está ", " están ", " estoy ", " tiene ", " tengo ", " para ",
+      " por ", " con ", " sin ", " muy ", " también ", " usted ",
+      " ustedes ", " nosotros ", " quiero ", " puede ", " pueden ",
+      " gracias ", " hola ", " entonces ", " este ", " esta ", " eso ",
+      " hay ", " fue ", " son ", " eran ", " así "
+    ],
+    english: [
+      " the ", " and ", " is ", " are ", " was ", " were ", " you ",
+      " your ", " have ", " has ", " had ", " with ", " for ", " from ",
+      " that ", " this ", " these ", " those ", " what ", " where ",
+      " when ", " why ", " how ", " not ", " do ", " does ", " did ",
+      " can ", " could ", " would ", " should ", " will ", " about ",
+      " there ", " their ", " they ", " we ", " he ", " she ", " it ",
+      " hello ", " thanks ", " please ", " because ", " people "
+    ]
+  };
+
+  function scoreTranscriptLanguage(text, language) {
+    const clean = (text || "").trim();
+    if (!clean) return -100;
+
+    const lower = " " +
+      clean.toLocaleLowerCase().replace(/\s+/g, " ") + " ";
+
+    let score = 0;
+
+    for (const marker of LANGUAGE_MARKERS[language]) {
+      if (lower.includes(marker)) score += 2;
     }
 
-    if (
-      language === "es" ||
-      language.startsWith("spanish") ||
-      language.startsWith("español")
-    ) {
-      return "spanish";
+    const words = lower.match(/[\p{L}\p{N}]+/gu) || [];
+
+    if (language === "spanish" && /[¿¡áéíóúüñ]/i.test(clean)) {
+      score += 4;
     }
+
+    if (language === "english" && /[¿¡áéíóúüñ]/i.test(clean)) {
+      score -= 2;
+    }
+
+    if (words.length < 3) score -= 2;
+
+    return score;
+  }
+
+  function identifyLanguage(text) {
+    const spanishScore = scoreTranscriptLanguage(text, "spanish");
+    const englishScore = scoreTranscriptLanguage(text, "english");
+
+    if (spanishScore >= englishScore + 2) return "spanish";
+    if (englishScore >= spanishScore + 2) return "english";
 
     return "unknown";
   }
 
-  function identifyLanguage(text) {
-    const clean = (text || "").trim();
-    if (!clean) return "unknown";
+  async function transcribeLiveChunk(samples) {
+    // Run one English-constrained and one Spanish-constrained pass.
+    // This costs more processing time, but avoids relying only on automatic
+    // detection when Whisper reports an uncertain language.
+    const options = {
+      sampling_rate: WHISPER_SAMPLE_RATE,
+      task: "transcribe",
+      return_timestamps: false
+    };
 
-    const lower = " " + clean.toLocaleLowerCase() + " ";
+    const englishResult = await transcriber(samples, {
+      ...options,
+      language: "english"
+    });
 
-    const spanishMarkers = [
-      " el ", " la ", " los ", " las ", " una ", " uno ",
-      " que ", " de ", " del ", " y ", " pero ", " porque ",
-      " hola ", " gracias ", " cómo ", " como ", " está ",
-      " estoy ", " tengo ", " para ", " buenos ", " buenas ",
-      " también ", " muy ", " usted ", " ustedes ", " no sé ",
-      " qué ", " sí ", " por favor ", " entonces ", " quiero ",
-      " puedes ", " puedo ", " necesito ", " español "
-    ];
+    const spanishResult = await transcriber(samples, {
+      ...options,
+      language: "spanish"
+    });
 
-    const englishMarkers = [
-      " the ", " and ", " is ", " are ", " you ", " your ",
-      " have ", " has ", " hello ", " thanks ", " thank you ",
-      " what ", " where ", " when ", " why ", " how ",
-      " this ", " that ", " with ", " for ", " not ", " do ",
-      " does ", " can ", " could ", " would ", " should ",
-      " please ", " good ", " morning ", " evening ", " english "
-    ];
+    const englishText = (englishResult.text || "").trim();
+    const spanishText = (spanishResult.text || "").trim();
 
-    const spanishScore = spanishMarkers.reduce(
-      (score, marker) => score + (lower.includes(marker) ? 1 : 0), 0
-    );
+    const englishScore =
+      scoreTranscriptLanguage(englishText, "english");
 
-    const englishScore = englishMarkers.reduce(
-      (score, marker) => score + (lower.includes(marker) ? 1 : 0), 0
-    );
+    const spanishScore =
+      scoreTranscriptLanguage(spanishText, "spanish");
 
-    if (/[¿¡áéíóúüñ]/i.test(clean)) return "spanish";
-    if (spanishScore > englishScore) return "spanish";
-    if (englishScore > spanishScore) return "english";
+    if (!englishText && spanishText) {
+      return { text: spanishText, language: "spanish" };
+    }
 
-    return "unknown";
+    if (!spanishText && englishText) {
+      return { text: englishText, language: "english" };
+    }
+
+    if (spanishScore > englishScore) {
+      return { text: spanishText, language: "spanish" };
+    }
+
+    if (englishScore > spanishScore) {
+      return { text: englishText, language: "english" };
+    }
+
+    if (spanishText.length > englishText.length) {
+      return { text: spanishText, language: "unknown" };
+    }
+
+    return { text: englishText, language: "unknown" };
   }
 
   function normalizeWord(word) {
@@ -792,7 +854,9 @@
   function removeOverlap(previousText, newText) {
     const previousWords = (previousText || "").trim().split(/\s+/)
       .filter(Boolean);
-    const newWords = (newText || "").trim().split(/\s+/).filter(Boolean);
+
+    const newWords = (newText || "").trim().split(/\s+/)
+      .filter(Boolean);
 
     if (!previousWords.length || !newWords.length) {
       return newText.trim();
@@ -829,6 +893,7 @@
     if (!clean) return;
 
     const normalized = normalizeDetectedLanguage(detectedLanguage);
+
     const language = normalized !== "unknown"
       ? normalized
       : identifyLanguage(clean);
@@ -859,12 +924,14 @@
     liveOutput.appendChild(bubble);
 
     liveOutput.scrollTop = liveOutput.scrollHeight;
+
     lastDisplayedText = clean;
     lastDisplayedLanguage = language;
   }
 
   function updateLiveStatus(message) {
     const waiting = liveChunkQueue.length;
+
     const average = processedChunkCount
       ? (totalInferenceSeconds / processedChunkCount).toFixed(1) + " s"
       : "not measured";
@@ -904,15 +971,11 @@
         if (!liveActive || sessionId !== liveSessionId) break;
         if (item.generation !== conversationGeneration) continue;
 
-        updateLiveStatus("Recognizing speech...");
+        updateLiveStatus("Checking English and Spanish recognition...");
 
         const startedAt = performance.now();
 
-        const result = await transcriber(whisperSamples, {
-          sampling_rate: WHISPER_SAMPLE_RATE,
-          task: "transcribe",
-          return_timestamps: false
-        });
+        const result = await transcribeLiveChunk(whisperSamples);
 
         const elapsedSeconds = (performance.now() - startedAt) / 1000;
         totalInferenceSeconds += elapsedSeconds;
@@ -1086,9 +1149,11 @@
       const chunkSamples = Math.floor(
         sourceSampleRate * CHUNK_SECONDS
       );
+
       const overlapSamples = Math.floor(
         sourceSampleRate * OVERLAP_SECONDS
       );
+
       const stepSamples = chunkSamples - overlapSamples;
 
       liveProcessor.onaudioprocess = event => {
