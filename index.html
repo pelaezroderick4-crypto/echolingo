@@ -154,11 +154,11 @@
   let liveSessionId = 0;
 
   // At most one additional chunk waits while Whisper is busy.
-  // Replacing the pending chunk prevents an unlimited audio backlog.
   let pendingChunk = null;
   let pendingSampleRate = 0;
 
   const CHUNK_SECONDS = 5;
+  const WHISPER_SAMPLE_RATE = 16000;
 
   env.allowLocalModels = false;
   env.allowRemoteModels = true;
@@ -191,49 +191,114 @@
   audioFile.addEventListener("change", () => {
     transcribeButton.disabled =
       !transcriber || !audioFile.files.length;
+
     outputBox.textContent = audioFile.files.length
       ? "Ready when you are."
       : "Choose an audio file to begin.";
   });
 
+  // Convert decoded audio to mono, 16 kHz audio before sending it to Whisper.
+  async function prepareWhisperAudio(decoded) {
+    const monoBuffer = new AudioBuffer({
+      numberOfChannels: 1,
+      length: decoded.length,
+      sampleRate: decoded.sampleRate
+    });
+
+    const mono = new Float32Array(decoded.length);
+
+    for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
+      const data = decoded.getChannelData(channel);
+
+      for (let i = 0; i < data.length; i++) {
+        mono[i] += data[i] / decoded.numberOfChannels;
+      }
+    }
+
+    monoBuffer.copyToChannel(mono, 0);
+
+    const targetLength = Math.ceil(
+      decoded.duration * WHISPER_SAMPLE_RATE
+    );
+
+    const offlineContext = new OfflineAudioContext(
+      1,
+      targetLength,
+      WHISPER_SAMPLE_RATE
+    );
+
+    const source = offlineContext.createBufferSource();
+    source.buffer = monoBuffer;
+    source.connect(offlineContext.destination);
+    source.start(0);
+
+    const resampledBuffer = await offlineContext.startRendering();
+
+    return {
+      samples: resampledBuffer.getChannelData(0),
+      originalSampleRate: decoded.sampleRate,
+      duration: decoded.duration
+    };
+  }
+
   transcribeButton.addEventListener("click", async () => {
     const file = audioFile.files[0];
+
     if (!file || !transcriber) return;
 
     transcribeButton.disabled = true;
-    statusBox.textContent = "Reading audio and transcribing locally...";
+    statusBox.textContent = "Reading and preparing audio...";
     outputBox.textContent = "";
 
     let context;
 
     try {
       const bytes = await file.arrayBuffer();
+
       context = new AudioContext();
       const decoded = await context.decodeAudioData(bytes);
 
-      const mono = new Float32Array(decoded.length);
-
-      for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
-        const data = decoded.getChannelData(channel);
-        for (let i = 0; i < data.length; i++) {
-          mono[i] += data[i] / decoded.numberOfChannels;
-        }
+      if (!decoded.length || decoded.duration <= 0) {
+        throw new Error("The selected audio file is empty.");
       }
 
-      const result = await transcriber(mono, {
-        sampling_rate: decoded.sampleRate,
+      statusBox.textContent =
+        "Preparing audio: " +
+        decoded.duration.toFixed(1) + " seconds, " +
+        decoded.sampleRate + " Hz. Converting to 16,000 Hz...";
+
+      const prepared = await prepareWhisperAudio(decoded);
+
+      statusBox.textContent =
+        "Transcribing in English locally. Please wait...";
+
+      const result = await transcriber(prepared.samples, {
+        sampling_rate: WHISPER_SAMPLE_RATE,
+        language: "english",
+        task: "transcribe",
         return_timestamps: false
       });
 
-      outputBox.textContent = result.text || "(No speech detected.)";
-      statusBox.textContent = "Finished. Check the transcription above.";
+      const transcript = (result.text || "").trim();
+
+      outputBox.textContent =
+        transcript || "(No speech detected.)";
+
+      statusBox.textContent =
+        "Finished. Audio duration: " +
+        prepared.duration.toFixed(1) + " seconds. " +
+        "Original sample rate: " + prepared.originalSampleRate +
+        " Hz. Whisper input: 16000 Hz mono.";
     } catch (error) {
       statusBox.textContent =
         "TRANSCRIPTION FAILED: " + error.message;
     } finally {
       if (context && context.state !== "closed") {
-        await context.close();
+        try {
+          await context.close();
+        } catch (_) {}
       }
+
       transcribeButton.disabled =
         !transcriber || !audioFile.files.length;
     }
@@ -269,10 +334,10 @@
 
       if (liveActive && sessionId === liveSessionId) {
         appendLiveText(result.text);
-        liveStatus.textContent =
-          pendingChunk
-            ? "Transcription running. Catching up with recent audio..."
-            : "Live capture is running. Processing continues in short chunks.";
+
+        liveStatus.textContent = pendingChunk
+          ? "Transcription running. Catching up with recent audio..."
+          : "Live capture is running. Processing continues in short chunks.";
       }
     } catch (error) {
       if (sessionId === liveSessionId) {
@@ -282,8 +347,6 @@
     } finally {
       processingChunk = false;
 
-      // Process at most one waiting chunk. If Whisper falls behind,
-      // newer audio replaces the waiting chunk instead of growing a queue.
       if (
         liveActive &&
         sessionId === liveSessionId &&
@@ -308,7 +371,6 @@
     liveActive = false;
     liveSessionId++;
 
-    // Discard waiting audio from the stopped session.
     pendingChunk = null;
     pendingSampleRate = 0;
 
@@ -408,10 +470,9 @@
         for (let i = 0; i < input.length; i++) {
           liveSamples.push(input[i]);
         }
+
         liveSampleCount += input.length;
 
-        // Extract fixed-size chunks. Do not send all accumulated samples
-        // to Whisper when it has been busy for longer than five seconds.
         while (liveSampleCount >= targetSamples) {
           const chunkArray = liveSamples.splice(0, targetSamples);
           liveSampleCount -= targetSamples;
@@ -426,8 +487,6 @@
               thisSession
             );
           } else {
-            // Keep only the most recent waiting chunk. This bounds memory
-            // and latency when inference is slower than real time.
             pendingChunk = chunk;
             pendingSampleRate = sampleRate;
           }
@@ -436,7 +495,6 @@
 
       liveSource.connect(liveProcessor);
 
-      // Keep the processor active without playing captured audio aloud.
       silentGain = liveAudioContext.createGain();
       silentGain.gain.value = 0;
       liveProcessor.connect(silentGain);
@@ -460,7 +518,7 @@
 
       stopLiveButton.disabled = false;
       liveStatus.textContent =
-        "Live audio capture started. Speak or play harmless test audio in the shared tab.";
+        "Live audio capture started. Play harmless test audio in the shared tab.";
     } catch (error) {
       await stopLiveAudio(
         "Could not start live capture: " + error.message +
@@ -477,6 +535,7 @@
     if (liveStream) {
       liveStream.getTracks().forEach(track => track.stop());
     }
+
     if (liveAudioContext && liveAudioContext.state !== "closed") {
       liveAudioContext.close();
     }
