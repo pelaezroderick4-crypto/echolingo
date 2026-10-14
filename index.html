@@ -250,11 +250,13 @@
 
     processingChunk = true;
     liveStatus.textContent =
-      "Transcribing a live audio chunk locally...";
+      "Transcribing English audio locally...";
 
     try {
       const result = await transcriber(samples, {
         sampling_rate: sampleRate,
+        language: "english",
+        task: "transcribe",
         return_timestamps: false
       });
 
