@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#101827">
-  <title>EchoLingo | Local Transcription Test</title>
+  <title>EchoLingo | Live Audio Test</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -14,11 +14,12 @@
       display: flex; justify-content: center; align-items: center;
     }
     main {
-      width: 100%; max-width: 720px; padding: 28px;
+      width: 100%; max-width: 760px; padding: 28px;
       background: #1b2638; border: 1px solid #35435a;
       border-radius: 18px;
     }
     h1 { margin-top: 0; color: #7dd3fc; font-size: 34px; }
+    h2 { margin-top: 28px; font-size: 21px; }
     .subtitle { color: #c0ccdd; line-height: 1.6; }
     button, input {
       width: 100%; margin-top: 12px; padding: 14px;
@@ -28,11 +29,14 @@
       border: 0; background: #0284c7; color: white;
       font-weight: bold; cursor: pointer;
     }
+    button.secondary { background: #475569; }
+    button.stop { background: #b91c1c; }
     button:disabled { opacity: .55; cursor: not-allowed; }
     .status, .output {
       margin-top: 18px; padding: 16px; background: #101827;
       border: 1px solid #35435a; border-radius: 10px;
       line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap;
+      min-height: 50px;
     }
     .notice {
       margin-top: 18px; padding: 14px;
@@ -41,40 +45,83 @@
     }
     .small { color: #9eafc5; font-size: 13px; line-height: 1.6; }
     label { display: block; margin-top: 18px; font-weight: bold; }
+    .section {
+      margin-top: 24px; padding-top: 4px;
+      border-top: 1px solid #35435a;
+    }
   </style>
 </head>
 <body>
 <main>
   <h1>EchoLingo</h1>
   <p class="subtitle">English ↔ Spanish · Local Transcription Test</p>
-  <p>This first test transcribes a sample audio file in your browser.
-     Live browser-tab transcription will be a later step.</p>
+
+  <p>
+    Test local audio transcription or try capturing audio from a browser
+    tab. Live transcription is experimental.
+  </p>
 
   <button id="loadButton" type="button">Load Local Whisper Model</button>
-
-  <label for="audioFile">Choose a harmless audio file</label>
-  <input id="audioFile" type="file" accept="audio/*">
-
-  <button id="transcribeButton" type="button" disabled>
-    Transcribe Selected Audio
-  </button>
 
   <div id="status" class="status" role="status" aria-live="polite">
     Status: Model not loaded.
   </div>
 
-  <h3>Transcription</h3>
-  <div id="output" class="output">Your transcription will appear here.</div>
+  <section class="section">
+    <h2>1. Transcribe an Audio File</h2>
+
+    <label for="audioFile">Choose a harmless audio file</label>
+    <input id="audioFile" type="file" accept="audio/*">
+
+    <button id="transcribeButton" type="button" disabled>
+      Transcribe Selected Audio
+    </button>
+
+    <div id="output" class="output">
+      Your file transcription will appear here.
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>2. Live Browser Audio Test</h2>
+
+    <p class="small">
+      In Chrome, click Start Live Audio, choose a browser tab in the
+      sharing window, and enable Share tab audio if that option appears.
+      Do not select your microphone as a substitute for tab audio.
+    </p>
+
+    <button id="startLiveButton" type="button" disabled>
+      Start Live Audio
+    </button>
+    <button id="stopLiveButton" class="stop" type="button" disabled>
+      Stop Live Audio
+    </button>
+
+    <div id="liveStatus" class="status" role="status" aria-live="polite">
+      Live audio is stopped.
+    </div>
+
+    <h3>Live Transcription</h3>
+    <div id="liveOutput" class="output">
+      Live speech will appear here after audio is captured and processed.
+    </div>
+  </section>
 
   <div class="notice">
-    <strong>Privacy:</strong> The chosen audio is processed in this browser.
-    The model and supporting software are downloaded from external hosting.
-    Do not select patient, student, or other sensitive audio. This prototype
-    is not certified or verified as HIPAA/FERPA compliant.
+    <strong>Privacy:</strong> Audio is intended to be processed in this
+    browser and is not intentionally uploaded by this page. The model and
+    software are downloaded from external hosting. Browser permissions and
+    network activity may vary. Do not use patient, student, or other
+    sensitive audio. This prototype is not certified or verified as
+    HIPAA/FERPA compliant. Confirm applicable workplace policies before
+    capturing any real calls.
   </div>
+
   <p class="small">
-    The first model download can be large and may take several minutes.
-    Keep this page open while it loads.
+    The first model download may take several minutes. Live transcription
+    uses short audio chunks and may have delays, missed words, or errors.
+    Keep this page open while testing.
   </p>
 </main>
 
@@ -88,17 +135,31 @@
   const statusBox = document.getElementById("status");
   const outputBox = document.getElementById("output");
 
-  let transcriber = null;
+  const startLiveButton = document.getElementById("startLiveButton");
+  const stopLiveButton = document.getElementById("stopLiveButton");
+  const liveStatus = document.getElementById("liveStatus");
+  const liveOutput = document.getElementById("liveOutput");
 
-  // The model is downloaded and run locally by the browser.
-  // This setting does not block the initial download.
+  let transcriber = null;
+  let liveStream = null;
+  let liveAudioContext = null;
+  let liveSource = null;
+  let liveProcessor = null;
+  let liveSamples = [];
+  let liveSampleCount = 0;
+  let liveActive = false;
+  let processingChunk = false;
+  let liveSessionId = 0;
+
+  const CHUNK_SECONDS = 5;
+
   env.allowLocalModels = false;
   env.allowRemoteModels = true;
 
   loadButton.addEventListener("click", async () => {
     loadButton.disabled = true;
     statusBox.textContent =
-      "Loading multilingual Whisper model. The first download may take a while...";
+      "Loading multilingual Whisper model. Please wait...";
     outputBox.textContent = "";
 
     try {
@@ -109,12 +170,13 @@
       );
 
       statusBox.textContent =
-        "SUCCESS: Model loaded. Choose a harmless audio file to test.";
+        "SUCCESS: Model loaded. You can test a file or live audio.";
       transcribeButton.disabled = !audioFile.files.length;
+      startLiveButton.disabled = false;
     } catch (error) {
       statusBox.textContent =
         "MODEL LOAD FAILED: " + error.message +
-        "\nCheck your internet connection and try again.";
+        "\nCheck your connection and try again.";
       loadButton.disabled = false;
     }
   });
@@ -122,7 +184,9 @@
   audioFile.addEventListener("change", () => {
     transcribeButton.disabled =
       !transcriber || !audioFile.files.length;
-    outputBox.textContent = "Ready when you are.";
+    outputBox.textContent = audioFile.files.length
+      ? "Ready when you are."
+      : "Choose an audio file to begin.";
   });
 
   transcribeButton.addEventListener("click", async () => {
@@ -133,15 +197,15 @@
     statusBox.textContent = "Reading audio and transcribing locally...";
     outputBox.textContent = "";
 
-    let audioContext;
+    let context;
 
     try {
       const bytes = await file.arrayBuffer();
-      audioContext = new AudioContext();
-      const decoded = await audioContext.decodeAudioData(bytes);
+      context = new AudioContext();
+      const decoded = await context.decodeAudioData(bytes);
 
-      // Mix audio channels into mono.
       const mono = new Float32Array(decoded.length);
+
       for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
         const data = decoded.getChannelData(channel);
         for (let i = 0; i < data.length; i++) {
@@ -160,10 +224,210 @@
       statusBox.textContent =
         "TRANSCRIPTION FAILED: " + error.message;
     } finally {
-      if (audioContext && audioContext.state !== "closed") {
-        await audioContext.close();
+      if (context && context.state !== "closed") {
+        await context.close();
       }
-      transcribeButton.disabled = !transcriber || !audioFile.files.length;
+      transcribeButton.disabled =
+        !transcriber || !audioFile.files.length;
+    }
+  });
+
+  function appendLiveText(text) {
+    const clean = (text || "").trim();
+    if (!clean) return;
+
+    if (liveOutput.textContent.startsWith(
+      "Live speech will appear here"
+    )) {
+      liveOutput.textContent = clean;
+    } else {
+      liveOutput.textContent += "\n" + clean;
+    }
+  }
+
+  async function transcribeLiveChunk(samples, sampleRate, sessionId) {
+    if (!samples.length || !transcriber) return;
+
+    processingChunk = true;
+    liveStatus.textContent =
+      "Transcribing a live audio chunk locally...";
+
+    try {
+      const result = await transcriber(samples, {
+        sampling_rate: sampleRate,
+        return_timestamps: false
+      });
+
+      if (liveActive && sessionId === liveSessionId) {
+        appendLiveText(result.text);
+        liveStatus.textContent =
+          "Live capture is running. Processing continues in short chunks.";
+      }
+    } catch (error) {
+      if (sessionId === liveSessionId) {
+        liveStatus.textContent =
+          "Chunk transcription failed: " + error.message;
+      }
+    } finally {
+      processingChunk = false;
+    }
+  }
+
+  async function stopLiveAudio(message = "Live audio is stopped.") {
+    liveActive = false;
+    liveSessionId++;
+
+    if (liveProcessor) {
+      liveProcessor.onaudioprocess = null;
+      try { liveProcessor.disconnect(); } catch (_) {}
+      liveProcessor = null;
+    }
+
+    if (liveSource) {
+      try { liveSource.disconnect(); } catch (_) {}
+      liveSource = null;
+    }
+
+    if (liveStream) {
+      liveStream.getTracks().forEach(track => track.stop());
+      liveStream = null;
+    }
+
+    if (liveAudioContext && liveAudioContext.state !== "closed") {
+      try { await liveAudioContext.close(); } catch (_) {}
+    }
+
+    liveAudioContext = null;
+    liveSamples = [];
+    liveSampleCount = 0;
+    processingChunk = false;
+
+    startLiveButton.disabled = !transcriber;
+    stopLiveButton.disabled = true;
+    liveStatus.textContent = message;
+  }
+
+  startLiveButton.addEventListener("click", async () => {
+    if (!transcriber || liveActive) return;
+
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getDisplayMedia) {
+      liveStatus.textContent =
+        "This browser does not support browser-tab capture here. Try an up-to-date Chrome browser.";
+      return;
+    }
+
+    startLiveButton.disabled = true;
+    liveStatus.textContent =
+      "Choose a browser tab and enable Share tab audio if offered.";
+
+    try {
+      // Browser requires a video track for display capture.
+      // Only the audio track is connected to the transcription pipeline.
+      liveStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true
+      });
+
+      const audioTracks = liveStream.getAudioTracks();
+
+      if (!audioTracks.length) {
+        await stopLiveAudio(
+          "No shared tab audio was received. Stop sharing, try again, and enable Share tab audio."
+        );
+        return;
+      }
+
+      liveSessionId++;
+      const thisSession = liveSessionId;
+      liveActive = true;
+      liveSamples = [];
+      liveSampleCount = 0;
+
+      liveOutput.textContent = "";
+      liveAudioContext = new AudioContext();
+      await liveAudioContext.resume();
+
+      liveSource = liveAudioContext.createMediaStreamSource(
+        new MediaStream(audioTracks)
+      );
+
+      // ScriptProcessor is used here for a simple browser prototype.
+      // A production version should use AudioWorklet.
+      liveProcessor = liveAudioContext.createScriptProcessor(
+        4096, 1, 1
+      );
+
+      liveProcessor.onaudioprocess = event => {
+        if (!liveActive || thisSession !== liveSessionId) return;
+
+        const input = event.inputBuffer.getChannelData(0);
+        for (let i = 0; i < input.length; i++) {
+          liveSamples.push(input[i]);
+        }
+        liveSampleCount += input.length;
+
+        const targetSamples =
+          liveAudioContext.sampleRate * CHUNK_SECONDS;
+
+        if (liveSampleCount >= targetSamples && !processingChunk) {
+          const chunk = new Float32Array(liveSamples);
+          liveSamples = [];
+          liveSampleCount = 0;
+
+          transcribeLiveChunk(
+            chunk,
+            liveAudioContext.sampleRate,
+            thisSession
+          );
+        }
+      };
+
+      liveSource.connect(liveProcessor);
+
+      // Keep the processor active without sending captured sound to speakers.
+      const silentGain = liveAudioContext.createGain();
+      silentGain.gain.value = 0;
+      liveProcessor.connect(silentGain);
+      silentGain.connect(liveAudioContext.destination);
+
+      liveStream.getVideoTracks().forEach(track => {
+        track.addEventListener("ended", () => {
+          if (thisSession === liveSessionId && liveActive) {
+            stopLiveAudio("Browser-tab sharing ended.");
+          }
+        });
+      });
+
+      audioTracks.forEach(track => {
+        track.addEventListener("ended", () => {
+          if (thisSession === liveSessionId && liveActive) {
+            stopLiveAudio("Shared tab audio ended.");
+          }
+        });
+      });
+
+      stopLiveButton.disabled = false;
+      liveStatus.textContent =
+        "Live audio capture started. Speak or play harmless test audio in the shared tab.";
+    } catch (error) {
+      await stopLiveAudio(
+        "Could not start live capture: " + error.message +
+        ". Make sure you granted permission and selected a tab with audio."
+      );
+    }
+  });
+
+  stopLiveButton.addEventListener("click", async () => {
+    await stopLiveAudio("Live audio stopped by you.");
+  });
+
+  window.addEventListener("beforeunload", () => {
+    if (liveStream) {
+      liveStream.getTracks().forEach(track => track.stop());
+    }
+    if (liveAudioContext && liveAudioContext.state !== "closed") {
+      liveAudioContext.close();
     }
   });
 </script>
