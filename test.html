@@ -1,232 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VoxBridge Test — Voice Without Barriers</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxBridge Test — Voice Without Barriers</title>
 
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #07111f;
-      --panel: #101e30;
-      --panel2: #15263b;
-      --blue: #3287f6;
-      --teal: #13b8a6;
-      --text: #eaf2ff;
-      --muted: #9aabc2;
-      --border: #263b53;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    header {
-      padding: 22px 16px;
-      text-align: center;
-      border-bottom: 1px solid var(--border);
-      background: #0b1728;
-    }
-
-    header h1 {
-      margin: 0;
-      font-size: 26px;
-    }
-
-    header h1 span { color: var(--teal); }
-
-    header p {
-      color: var(--muted);
-      margin: 8px 0 0;
-      font-size: 14px;
-    }
-
-    main {
-      width: min(900px, 100%);
-      margin: 0 auto;
-      padding: 18px 14px 30px;
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      margin-bottom: 15px;
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 9px;
-      align-items: center;
-    }
-
-    button, .file-label {
-      border: 0;
-      border-radius: 9px;
-      padding: 11px 15px;
-      color: white;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      background: var(--blue);
-    }
-
-    button.secondary, .file-label {
-      background: var(--panel2);
-      border: 1px solid var(--border);
-    }
-
-    button.stop { background: #b9384a; }
-
-    button:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    input[type="file"] { display: none; }
-
-    #status, #fileStatus {
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.6;
-      margin-top: 13px;
-      overflow-wrap: anywhere;
-    }
-
-    .progress {
-      width: 100%;
-      height: 5px;
-      margin-top: 12px;
-      background: #263b53;
-      border-radius: 5px;
-      overflow: hidden;
-    }
-
-    #progressBar {
-      width: 0%;
-      height: 100%;
-      background: var(--teal);
-      transition: width .2s;
-    }
-
-    .chat-heading {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .chat-heading h2, .section-title {
-      margin: 0;
-      font-size: 17px;
-    }
-
-    #chat {
-      height: 350px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding: 12px;
-      background: #081321;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-    }
-
-    .message {
-      max-width: 88%;
-      padding: 11px 13px;
-      border-radius: 12px;
-      line-height: 1.5;
-      overflow-wrap: anywhere;
-      white-space: pre-wrap;
-    }
-
-    .message .language {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      opacity: .85;
-      margin-bottom: 5px;
-      letter-spacing: .6px;
-    }
-
-    .message.english {
-      align-self: flex-start;
-      background: #153b70;
-      border: 1px solid #235aa0;
-    }
-
-    .message.spanish {
-      align-self: flex-end;
-      background: #07574f;
-      border: 1px solid #0b8276;
-    }
-
-    .message.unknown {
-      align-self: center;
-      background: #263449;
-      border: 1px solid #3c4d64;
-    }
-
-    .message.system {
-      align-self: center;
-      max-width: 100%;
-      color: var(--muted);
-      background: transparent;
-      font-size: 12px;
-      padding: 4px;
-    }
-
-    .help {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.6;
-      margin: 12px 0 0;
-    }
-
-    @media (max-width: 520px) {
-      header h1 { font-size: 22px; }
-      .panel { padding: 12px; }
-      #chat { height: 350px; }
-      button, .file-label { padding: 10px 12px; }
-    }
-  </style>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#07111f; --panel:#101e30; --panel2:#15263b;
+  --blue:#3287f6; --teal:#13b8a6; --text:#eaf2ff;
+  --muted:#9aabc2; --border:#263b53;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; min-height:100vh; background:var(--bg);
+  color:var(--text); font-family:Arial,Helvetica,sans-serif;
+}
+header {
+  padding:22px 16px; text-align:center;
+  border-bottom:1px solid var(--border); background:#0b1728;
+}
+header h1 { margin:0; font-size:26px; }
+header h1 span { color:var(--teal); }
+header p { color:var(--muted); margin:8px 0 0; font-size:14px; }
+main { width:min(900px,100%); margin:auto; padding:18px 14px 30px; }
+.panel {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:14px; padding:16px; margin-bottom:15px;
+}
+.controls { display:flex; flex-wrap:wrap; gap:9px; align-items:center; }
+button,.file-label {
+  border:0; border-radius:9px; padding:11px 15px; color:white;
+  font-size:14px; font-weight:700; cursor:pointer; background:var(--blue);
+}
+button.secondary,.file-label {
+  background:var(--panel2); border:1px solid var(--border);
+}
+button.stop { background:#b9384a; }
+button:disabled { opacity:.45; cursor:not-allowed; }
+input[type=file] { display:none; }
+input[type=text],select,textarea {
+  width:100%; background:#081321; color:var(--text);
+  border:1px solid var(--border); border-radius:9px;
+  padding:11px; font:inherit;
+}
+select { cursor:pointer; }
+#status,#fileStatus,#docStatus {
+  color:var(--muted); font-size:13px; line-height:1.6;
+  margin-top:13px; overflow-wrap:anywhere;
+}
+.progress {
+  width:100%; height:5px; margin-top:12px; background:#263b53;
+  border-radius:5px; overflow:hidden;
+}
+#progressBar { width:0%; height:100%; background:var(--teal); transition:width .2s; }
+.chat-heading {
+  display:flex; justify-content:space-between; gap:10px;
+  align-items:center; margin-bottom:12px;
+}
+.chat-heading h2,.section-title { margin:0; font-size:17px; }
+#chat {
+  height:350px; overflow-y:auto; display:flex; flex-direction:column;
+  gap:12px; padding:12px; background:#081321;
+  border:1px solid var(--border); border-radius:12px;
+}
+.message {
+  max-width:88%; padding:11px 13px; border-radius:12px;
+  line-height:1.5; overflow-wrap:anywhere; white-space:pre-wrap;
+}
+.message .language {
+  font-size:11px; font-weight:700; text-transform:uppercase;
+  opacity:.85; margin-bottom:5px; letter-spacing:.6px;
+}
+.message.english { align-self:flex-start; background:#153b70; border:1px solid #235aa0; }
+.message.spanish { align-self:flex-end; background:#07574f; border:1px solid #0b8276; }
+.message.unknown { align-self:center; background:#263449; border:1px solid #3c4d64; }
+.message.system {
+  align-self:center; max-width:100%; color:var(--muted);
+  background:transparent; font-size:12px; padding:4px;
+}
+.help { color:var(--muted); font-size:12px; line-height:1.6; margin:12px 0 0; }
+.field-label { display:block; font-size:13px; color:var(--muted); margin-bottom:7px; }
+.field { flex:1; min-width:180px; }
+#documentOutput {
+  min-height:220px; white-space:pre-wrap; overflow-wrap:anywhere;
+  line-height:1.65; background:#081321; border:1px solid var(--border);
+  border-radius:10px; padding:14px; margin-top:14px;
+}
+.doc-actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
+.small-note { color:var(--muted); font-size:12px; line-height:1.6; }
+@media(max-width:520px) {
+  header h1 { font-size:22px; }
+  .panel { padding:12px; }
+  #chat { height:350px; }
+  button,.file-label { padding:10px 12px; }
+}
+</style>
 </head>
 
 <body>
 <header>
   <h1>Vox<span>Bridge</span></h1>
-  <p>Voice Without Barriers · Experimental Transcription</p>
+  <p>Voice Without Barriers · Experimental Transcription &amp; Translation</p>
 </header>
 
 <main>
   <section class="panel">
     <h2 class="section-title">Live Transcription</h2>
-
     <div class="controls" style="margin-top:12px">
       <button id="startButton" disabled>Start Listening</button>
       <button id="stopButton" class="stop" disabled>Stop Listening</button>
       <button id="clearButton" class="secondary">New Conversation</button>
     </div>
-
     <div id="status">Loading Whisper Base. The first download may take several minutes.</div>
     <div class="progress"><div id="progressBar"></div></div>
-
     <p class="help">
       Select the browser tab playing your audio and enable
       <strong>Share tab audio</strong>. Keep this page open during the test.
-      English and Spanish are processed with automatic multilingual recognition.
+      English and Spanish use multilingual speech recognition.
     </p>
   </section>
 
@@ -249,20 +141,77 @@
     </div>
     <div id="fileStatus">File transcription is optional.</div>
   </section>
+
+  <!-- NEW FEATURE: DOCUMENT TRANSLATION -->
+  <section class="panel">
+    <h2 class="section-title">Document Translation</h2>
+    <p class="help">
+      Translate text-based PDF and Word (.docx) documents between English and Spanish.
+      The translated result is presented as clean, readable text.
+    </p>
+
+    <div style="margin-top:16px">
+      <label class="file-label" for="documentFile">Choose PDF or Word Document</label>
+      <input id="documentFile" type="file"
+             accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+      <div id="selectedDocument" class="small-note" style="margin-top:10px">
+        No document selected.
+      </div>
+    </div>
+
+    <div class="controls" style="margin-top:16px;align-items:flex-end">
+      <div class="field">
+        <label class="field-label" for="sourceLanguage">Document language</label>
+        <select id="sourceLanguage">
+          <option value="auto">Detect automatically</option>
+          <option value="en">English</option>
+          <option value="es">Spanish</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field-label" for="targetLanguage">Translate into</label>
+        <select id="targetLanguage">
+          <option value="es">Spanish</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="controls" style="margin-top:14px">
+      <button id="translateButton" disabled>Translate Document</button>
+      <button id="clearDocumentButton" class="secondary">Clear Document</button>
+    </div>
+
+    <div id="docStatus" aria-live="polite">
+      Select a PDF or DOCX file to begin.
+    </div>
+    <div class="progress"><div id="docProgressBar"></div></div>
+
+    <h3 style="font-size:15px;margin:20px 0 8px">Translated Document</h3>
+    <div id="documentOutput" aria-live="polite">Your translation will appear here.</div>
+
+    <div class="doc-actions">
+      <button id="copyTranslationButton" class="secondary" disabled>Copy Translation</button>
+      <button id="downloadTranslationButton" class="secondary" disabled>Save as TXT</button>
+    </div>
+
+    <p class="help">
+      Scanned PDFs containing page images require OCR, which is not included in this version.
+      Complex tables and original page formatting may not be preserved. Review translations
+      carefully before using them for medical, legal, or insurance decisions.
+    </p>
+  </section>
 </main>
 
 <script type="module">
-import {
-  pipeline,
-  env
-} from "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
+import { pipeline, env } from
+  "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2";
 
 const MODEL = "Xenova/whisper-base";
 const LIVE_CHUNK_SECONDS = 8;
 const LIVE_OVERLAP_SECONDS = 1;
 const FILE_CHUNK_SECONDS = 20;
 
-// Audio screening thresholds, not a full speech detector.
 const FRAME_MS = 20;
 const MIN_FRAME_RMS = 0.008;
 const MIN_ACTIVE_FRACTION = 0.12;
@@ -281,11 +230,30 @@ const chat = $("chat");
 const countEl = $("messageCount");
 const progressBar = $("progressBar");
 
+const documentFile = $("documentFile");
+const selectedDocument = $("selectedDocument");
+const sourceLanguage = $("sourceLanguage");
+const targetLanguage = $("targetLanguage");
+const translateButton = $("translateButton");
+const clearDocumentButton = $("clearDocumentButton");
+const docStatus = $("docStatus");
+const docProgressBar = $("docProgressBar");
+const documentOutput = $("documentOutput");
+const copyTranslationButton = $("copyTranslationButton");
+const downloadTranslationButton = $("downloadTranslationButton");
+
 let transcriber = null;
+let translator = null;
+let translatorDirection = "";
+let translatorLoading = false;
+let documentBusy = false;
+let extractedDocumentText = "";
+let translatedDocumentText = "";
+let currentDocumentName = "";
+
 let isListening = false;
 let isProcessing = false;
 let isTranscribingFile = false;
-let stopRequested = false;
 
 let displayStream = null;
 let audioContext = null;
@@ -327,7 +295,7 @@ function normalizeText(text) {
 
 function detectLanguageLabel(text) {
   const spanishWords =
-    /\b(hola|qué|como|cómo|cual|cuál|donde|dónde|cuando|cuándo|por|para|usted|ustedes|gracias|buenos|buenas|nombre|nacimiento|teléfono|numero|número|seguro|vida|sí|esta|está|tiene|ninguno|ninguna|cuido|dieta|noviembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|diciembre|del|con|tengo|tiene|puede|quiero|necesita|pero|porque|entonces|ahora|también|familia|fecha|enfermedad|diabetes|corazón|enfermedades|no|me|mi|es|el|la|los|las|un|una|y)\b/i.test(text);
+    /\b(hola|qué|como|cómo|cual|cuál|donde|dónde|cuando|cuándo|por|para|usted|ustedes|gracias|buenos|buenas|nombre|nacimiento|teléfono|numero|número|seguro|vida|sí|esta|está|tiene|ninguno|ninguna|cuido|dieta|noviembre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|diciembre|del|con|tengo|puede|quiero|necesita|pero|porque|entonces|ahora|también|familia|fecha|enfermedad|diabetes|corazón|enfermedades|no|me|mi|es|el|la|los|las|un|una|y)\b/i.test(text);
 
   const englishWords =
     /\b(the|what|when|where|who|why|how|your|you|are|is|was|were|have|has|hello|name|date|birth|best|contact|number|insurance|life|thank|thanks|please|can|would|could|does|and|for|with|this|that|we|they|my|me|it|not|chronic|medical|conditions|like|asthma|heart|disease|results|patient)\b/i.test(text);
@@ -396,17 +364,14 @@ async function loadModel() {
     fileButton.disabled = false;
   } catch (err) {
     console.error(err);
-    setStatus(
-      "Model failed to load. Check your internet connection and refresh. " +
-      (err.message || "")
-    );
+    setStatus("Model failed to load. Check your internet connection and refresh. " +
+      (err.message || ""));
   }
 }
 
 function mergeBuffers(buffers, length) {
   const out = new Float32Array(length);
   let offset = 0;
-
   for (const buffer of buffers) {
     out.set(buffer, offset);
     offset += buffer.length;
@@ -436,10 +401,8 @@ function speechCheck(samples, rate) {
   }
 
   const fraction = frames ? activeFrames / frames : 0;
-
   return {
-    hasSpeechLikeAudio:
-      fraction >= MIN_ACTIVE_FRACTION && peak >= MIN_PEAK_RMS,
+    hasSpeechLikeAudio: fraction >= MIN_ACTIVE_FRACTION && peak >= MIN_PEAK_RMS,
     fraction,
     peak
   };
@@ -484,7 +447,6 @@ function resampleTo16k(input, inputRate) {
   return output;
 }
 
-// Reject obvious decoding loops instead of displaying hundreds of repeated words.
 function rejectRepetitiveOutput(text) {
   const words = normalizeText(text).split(" ").filter(Boolean);
   if (words.length < 6) return false;
@@ -495,10 +457,8 @@ function rejectRepetitiveOutput(text) {
   const highestCount = Math.max(...counts.values());
   if (highestCount >= 8 && highestCount / words.length > 0.45) return true;
 
-  // Detect a phrase looping over and over, such as "the number of the number of".
   for (let size = 2; size <= 6; size++) {
     if (words.length < size * 3) continue;
-
     const phrase = words.slice(0, size).join(" ");
     let matches = 0;
 
@@ -506,10 +466,8 @@ function rejectRepetitiveOutput(text) {
       if (words.slice(i, i + size).join(" ") === phrase) matches++;
       else break;
     }
-
     if (matches >= 3) return true;
   }
-
   return false;
 }
 
@@ -523,7 +481,6 @@ function removeOverlap(previous, next) {
     const head = b.slice(0, n).join(" ").toLowerCase();
     if (tail === head) return b.slice(n).join(" ");
   }
-
   return (next || "").trim();
 }
 
@@ -542,25 +499,13 @@ function cleanLiveResult(text) {
   const normalized = normalizeText(clean);
   const now = Date.now();
 
-  // Avoid printing the same result repeatedly across adjacent chunks.
-  if (
-    normalized.length > 0 &&
-    normalized === normalizeText(lastAcceptedText) &&
-    now - lastAcceptedAt < 15000
-  ) {
-    return "";
-  }
+  if (normalized && normalized === normalizeText(lastAcceptedText) &&
+      now - lastAcceptedAt < 15000) return "";
 
-  // Also suppress a near-exact repeat if one result contains the other.
   const prior = normalizeText(lastAcceptedText);
-  if (
-    normalized.length > 12 &&
-    prior.length > 12 &&
-    (normalized.includes(prior) || prior.includes(normalized)) &&
-    now - lastAcceptedAt < 12000
-  ) {
-    return "";
-  }
+  if (normalized.length > 12 && prior.length > 12 &&
+      (normalized.includes(prior) || prior.includes(normalized)) &&
+      now - lastAcceptedAt < 12000) return "";
 
   previousLiveText = text.trim();
   lastAcceptedText = clean;
@@ -571,10 +516,7 @@ function cleanLiveResult(text) {
 async function transcribeSamples(samples, rate, sourceLabel) {
   if (!transcriber || !samples || !samples.length) return "";
 
-  const activity = speechCheck(samples, rate);
-
-  // Do not run Whisper on chunks with little sustained audio activity.
-  if (!activity.hasSpeechLikeAudio) return "";
+  if (!speechCheck(samples, rate).hasSpeechLikeAudio) return "";
 
   const trimmed = trimQuietEdges(samples, rate);
   if (!trimmed.length) return "";
@@ -592,14 +534,8 @@ async function transcribeSamples(samples, rate, sourceLabel) {
 
     const text = (result.text || "").trim();
 
-    if (sourceLabel === "live") {
-      return cleanLiveResult(text);
-    }
-
-    if (rejectRepetitiveOutput(text)) {
-      return "";
-    }
-
+    if (sourceLabel === "live") return cleanLiveResult(text);
+    if (rejectRepetitiveOutput(text)) return "";
     return text;
   } catch (err) {
     console.error("Transcription error:", err);
@@ -609,19 +545,12 @@ async function transcribeSamples(samples, rate, sourceLabel) {
 
 function enqueueChunk(samples) {
   if (!samples || !samples.length) return;
+  queue.push({ samples, rate: sampleRate, id: ++chunkNumber });
 
-  queue.push({
-    samples,
-    rate: sampleRate,
-    id: ++chunkNumber
-  });
-
-  // Keep the queue short if the model is slower than the incoming audio.
   if (queue.length > 2) {
     queue.shift();
     systemMessage("Skipped a delayed segment to keep live audio moving.");
   }
-
   processQueue();
 }
 
@@ -633,18 +562,13 @@ async function processQueue() {
     while (queue.length) {
       const item = queue.shift();
       setStatus("Listening... processing live segment " + item.id);
-
       const text = await transcribeSamples(item.samples, item.rate, "live");
       if (text) addMessage(text);
     }
   } finally {
     isProcessing = false;
-
-    if (isListening) {
-      setStatus("Listening for English and Spanish speech...");
-    } else if (!isTranscribingFile) {
-      setStatus("Listening stopped. Model is ready.");
-    }
+    if (isListening) setStatus("Listening for English and Spanish speech...");
+    else if (!isTranscribingFile) setStatus("Listening stopped. Model is ready.");
   }
 }
 
@@ -652,15 +576,12 @@ function handleAudioInput(event) {
   if (!isListening) return;
 
   const input = event.inputBuffer.getChannelData(0);
-  const copy = new Float32Array(input);
-
-  sampleBuffers.push(copy);
-  totalSamples += copy.length;
-  samplesSinceChunk += copy.length;
+  sampleBuffers.push(new Float32Array(input));
+  totalSamples += input.length;
+  samplesSinceChunk += input.length;
 
   const chunkSize = LIVE_CHUNK_SECONDS * sampleRate;
-  const stepSize =
-    (LIVE_CHUNK_SECONDS - LIVE_OVERLAP_SECONDS) * sampleRate;
+  const stepSize = (LIVE_CHUNK_SECONDS - LIVE_OVERLAP_SECONDS) * sampleRate;
 
   if (totalSamples >= chunkSize && samplesSinceChunk >= stepSize) {
     const all = mergeBuffers(sampleBuffers, totalSamples);
@@ -668,7 +589,6 @@ function handleAudioInput(event) {
     const overlap = all.slice(chunkSize - LIVE_OVERLAP_SECONDS * sampleRate);
 
     enqueueChunk(chunk);
-
     sampleBuffers = [overlap];
     totalSamples = overlap.length;
     samplesSinceChunk = 0;
@@ -685,8 +605,7 @@ async function startListening() {
 
   try {
     displayStream = await navigator.mediaDevices.getDisplayMedia({
-      video: true,
-      audio: true
+      video: true, audio: true
     });
 
     if (!displayStream.getAudioTracks().length) {
@@ -698,7 +617,6 @@ async function startListening() {
 
     audioContext = new AudioContext();
     sampleRate = audioContext.sampleRate;
-
     sourceNode = audioContext.createMediaStreamSource(displayStream);
     processorNode = audioContext.createScriptProcessor(4096, 1, 1);
     silentGain = audioContext.createGain();
@@ -717,15 +635,13 @@ async function startListening() {
     processorNode.connect(silentGain);
     silentGain.connect(audioContext.destination);
 
-    displayStream.getVideoTracks().forEach(track => {
-      track.addEventListener("ended", stopListening);
-    });
+    displayStream.getVideoTracks().forEach(track =>
+      track.addEventListener("ended", stopListening));
 
     isListening = true;
     startButton.disabled = true;
     stopButton.disabled = false;
     setStatus("Listening. Play the audio in the shared tab.");
-
   } catch (err) {
     console.error(err);
     setStatus("Audio sharing was cancelled or failed: " + err.message);
@@ -735,35 +651,29 @@ async function startListening() {
 
 async function stopListening() {
   isListening = false;
-  stopRequested = true;
 
   if (processorNode) {
     processorNode.onaudioprocess = null;
     try { processorNode.disconnect(); } catch {}
     processorNode = null;
   }
-
   if (sourceNode) {
     try { sourceNode.disconnect(); } catch {}
     sourceNode = null;
   }
-
   if (silentGain) {
     try { silentGain.disconnect(); } catch {}
     silentGain = null;
   }
-
   if (displayStream) {
     displayStream.getTracks().forEach(track => track.stop());
     displayStream = null;
   }
-
   if (audioContext) {
     try { await audioContext.close(); } catch {}
     audioContext = null;
   }
 
-  // Process any remaining captured audio once, without waiting for a full chunk.
   if (totalSamples > 0 && sampleRate) {
     const remaining = mergeBuffers(sampleBuffers, totalSamples);
     if (remaining.length > sampleRate * 0.5) {
@@ -777,8 +687,6 @@ async function stopListening() {
 
   startButton.disabled = !transcriber;
   stopButton.disabled = true;
-  stopRequested = false;
-
   processQueue();
 }
 
@@ -794,36 +702,29 @@ async function transcribeFile() {
   isTranscribingFile = true;
   fileButton.disabled = true;
   fileStatus.textContent = "Opening audio file...";
-
   let fileContext = null;
 
   try {
     fileContext = new AudioContext();
     const bytes = await file.arrayBuffer();
     const decoded = await fileContext.decodeAudioData(bytes);
-
-    const channels = [];
-    for (let c = 0; c < decoded.numberOfChannels; c++) {
-      channels.push(decoded.getChannelData(c));
-    }
-
     const mono = new Float32Array(decoded.length);
 
     for (let i = 0; i < decoded.length; i++) {
       let sum = 0;
-      for (const channel of channels) sum += channel[i];
-      mono[i] = sum / channels.length;
+      for (let c = 0; c < decoded.numberOfChannels; c++) {
+        sum += decoded.getChannelData(c)[i];
+      }
+      mono[i] = sum / decoded.numberOfChannels;
     }
 
     const fileRate = decoded.sampleRate;
     const chunkSamples = FILE_CHUNK_SECONDS * fileRate;
-    const parts = [];
     const totalParts = Math.ceil(mono.length / chunkSamples);
+    const parts = [];
 
     for (let start = 0; start < mono.length; start += chunkSamples) {
-      const end = Math.min(start + chunkSamples, mono.length);
-      const segment = mono.slice(start, end);
-
+      const segment = mono.slice(start, Math.min(start + chunkSamples, mono.length));
       fileStatus.textContent =
         "Transcribing segment " + (parts.length + 1) + " of " + totalParts + "...";
 
@@ -838,7 +739,6 @@ async function transcribeFile() {
       fileStatus.textContent =
         "No reliable speech was detected in the file. Try a clearer recording.";
     }
-
   } catch (err) {
     console.error(err);
     fileStatus.textContent =
@@ -848,10 +748,355 @@ async function transcribeFile() {
     if (fileContext) {
       try { await fileContext.close(); } catch {}
     }
-
     isTranscribingFile = false;
     fileButton.disabled = !transcriber;
   }
+}
+
+/* ---------------- DOCUMENT TRANSLATION ---------------- */
+
+function setDocProgress(value) {
+  docProgressBar.style.width = Math.max(0, Math.min(100, value)) + "%";
+}
+
+function setDocumentButtons() {
+  translateButton.disabled = documentBusy || !documentFile.files?.[0];
+  copyTranslationButton.disabled = !translatedDocumentText;
+  downloadTranslationButton.disabled = !translatedDocumentText;
+}
+
+documentFile.addEventListener("change", () => {
+  const file = documentFile.files?.[0];
+  extractedDocumentText = "";
+  translatedDocumentText = "";
+  currentDocumentName = file ? file.name : "";
+  documentOutput.textContent = "Your translation will appear here.";
+  setDocProgress(0);
+
+  selectedDocument.textContent = file
+    ? "Selected: " + file.name + " (" + Math.max(1, Math.round(file.size / 1024)) + " KB)"
+    : "No document selected.";
+
+  docStatus.textContent = file
+    ? "Ready to read the document."
+    : "Select a PDF or DOCX file to begin.";
+
+  setDocumentButtons();
+});
+
+async function extractPdfText(file) {
+  docStatus.textContent = "Loading PDF reader...";
+
+  const pdfjs = await import(
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs"
+  );
+
+  pdfjs.GlobalWorkerOptions.workerSrc =
+    "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+
+  const data = new Uint8Array(await file.arrayBuffer());
+  const pdf = await pdfjs.getDocument({ data }).promise;
+  const pages = [];
+
+  for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+    docStatus.textContent =
+      "Reading PDF page " + pageNum + " of " + pdf.numPages + "...";
+
+    const page = await pdf.getPage(pageNum);
+    const content = await page.getTextContent();
+    const items = content.items || [];
+    const lines = [];
+    let currentLine = "";
+    let previousY = null;
+
+    for (const item of items) {
+      if (typeof item.str !== "string") continue;
+      const y = item.transform ? item.transform[5] : null;
+
+      if (previousY !== null && y !== null && Math.abs(y - previousY) > 3) {
+        if (currentLine.trim()) lines.push(currentLine.trim());
+        currentLine = "";
+      }
+
+      currentLine += item.str;
+      if (item.hasEOL) {
+        if (currentLine.trim()) lines.push(currentLine.trim());
+        currentLine = "";
+      }
+      previousY = y;
+    }
+
+    if (currentLine.trim()) lines.push(currentLine.trim());
+    pages.push(lines.join("\n"));
+  }
+
+  const text = pages.join("\n\n");
+  if (!text.trim()) {
+    throw new Error(
+      "No selectable text was found. This may be a scanned PDF; OCR is not included."
+    );
+  }
+  return text;
+}
+
+async function extractDocxText(file) {
+  docStatus.textContent = "Loading Word document reader...";
+
+  const module = await import(
+    "https://cdn.jsdelivr.net/npm/mammoth@1.9.0/+esm"
+  );
+  const mammoth = module.default || module;
+  const arrayBuffer = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer });
+
+  if (result.messages?.length) {
+    console.info("Word document reader notices:", result.messages);
+  }
+
+  if (!result.value.trim()) {
+    throw new Error("No readable text was found in this Word document.");
+  }
+  return result.value;
+}
+
+async function readDocument(file) {
+  const name = file.name.toLowerCase();
+
+  if (name.endsWith(".pdf") || file.type === "application/pdf") {
+    return extractPdfText(file);
+  }
+
+  if (
+    name.endsWith(".docx") ||
+    file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ) {
+    return extractDocxText(file);
+  }
+
+  throw new Error("Unsupported file type. Please choose a PDF or DOCX file.");
+}
+
+function guessLanguage(text) {
+  const spanish = (text.match(
+    /\b(el|la|los|las|de|del|que|por|para|con|una|uno|nombre|fecha|nacimiento|noviembre|tiene|ninguno|ninguna|dieta|hola|gracias|sí|también|enfermedad)\b/gi
+  ) || []).length;
+
+  const english = (text.match(
+    /\b(the|and|or|of|to|is|are|was|were|what|your|name|date|birth|have|has|with|for|you|thank|hello|medical|condition|disease)\b/gi
+  ) || []).length;
+
+  return spanish > english ? "es" : "en";
+}
+
+function splitTextForTranslation(text, maxLength = 350) {
+  const paragraphs = text
+    .replace(/\r/g, "")
+    .split(/\n+/)
+    .map(p => p.trim())
+    .filter(Boolean);
+
+  const chunks = [];
+
+  for (const paragraph of paragraphs) {
+    if (paragraph.length <= maxLength) {
+      chunks.push(paragraph);
+      continue;
+    }
+
+    const sentences = paragraph.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [paragraph];
+    let chunk = "";
+
+    for (const sentence of sentences) {
+      const part = sentence.trim();
+      if (!part) continue;
+
+      if (part.length > maxLength) {
+        if (chunk) {
+          chunks.push(chunk);
+          chunk = "";
+        }
+
+        for (let i = 0; i < part.length; i += maxLength) {
+          chunks.push(part.slice(i, i + maxLength));
+        }
+      } else if ((chunk + " " + part).trim().length <= maxLength) {
+        chunk = (chunk + " " + part).trim();
+      } else {
+        if (chunk) chunks.push(chunk);
+        chunk = part;
+      }
+    }
+
+    if (chunk) chunks.push(chunk);
+  }
+
+  return chunks;
+}
+
+async function loadTranslationModel(direction) {
+  if (translator && translatorDirection === direction) return translator;
+
+  translator = null;
+  translatorDirection = "";
+  translatorLoading = true;
+
+  const modelName = direction === "en-es"
+    ? "Xenova/opus-mt-en-es"
+    : "Xenova/opus-mt-es-en";
+
+  try {
+    docStatus.textContent =
+      "Loading translation model (" + direction.replace("-", " → ") +
+      "). The first download may take several minutes...";
+
+    translator = await pipeline("translation", modelName, {
+      dtype: "q8",
+      progress_callback: p => {
+        if (p.status === "downloading") {
+          docStatus.textContent = "Downloading translation model: " + p.file;
+        }
+      }
+    });
+
+    translatorDirection = direction;
+    return translator;
+  } finally {
+    translatorLoading = false;
+  }
+}
+
+async function translateDocument() {
+  const file = documentFile.files?.[0];
+  if (!file || documentBusy) return;
+
+  documentBusy = true;
+  translatedDocumentText = "";
+  documentOutput.textContent = "Preparing document...";
+  setDocProgress(0);
+  setDocumentButtons();
+
+  try {
+    if (!extractedDocumentText) {
+      extractedDocumentText = await readDocument(file);
+    }
+
+    if (!extractedDocumentText.trim()) {
+      throw new Error("The document did not contain readable text.");
+    }
+
+    let from = sourceLanguage.value;
+    const to = targetLanguage.value;
+
+    if (from === "auto") {
+      from = guessLanguage(extractedDocumentText);
+    }
+
+    if (from === to) {
+      throw new Error(
+        "The detected/source language and target language are the same. Choose the other target language."
+      );
+    }
+
+    const direction = from + "-" + to;
+    const translationEngine = await loadTranslationModel(direction);
+    const chunks = splitTextForTranslation(extractedDocumentText);
+    const translatedParts = [];
+
+    if (!chunks.length) {
+      throw new Error("No readable text was found to translate.");
+    }
+
+    for (let i = 0; i < chunks.length; i++) {
+      docStatus.textContent =
+        "Translating part " + (i + 1) + " of " + chunks.length +
+        "... (" + (from === "en" ? "English" : "Spanish") + " → " +
+        (to === "en" ? "English" : "Spanish") + ")";
+
+      const result = await translationEngine(chunks[i], {
+        max_new_tokens: 512
+      });
+
+      const translated = Array.isArray(result)
+        ? result.map(item => item.translation_text || "").join(" ")
+        : (result.translation_text || "");
+
+      translatedParts.push(translated.trim());
+      setDocProgress(((i + 1) / chunks.length) * 100);
+
+      // Keep the page responsive and allow the browser to update the progress display.
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    translatedDocumentText = translatedParts.join("\n\n").trim();
+
+    if (!translatedDocumentText) {
+      throw new Error("The translation model returned no translated text.");
+    }
+
+    documentOutput.textContent = translatedDocumentText;
+    docStatus.textContent =
+      "Translation complete. Source: " +
+      (from === "en" ? "English" : "Spanish") +
+      ". Target: " + (to === "en" ? "English" : "Spanish") + ".";
+
+  } catch (err) {
+    console.error("Document translation error:", err);
+    docStatus.textContent = "Translation failed: " + (err.message || String(err));
+    if (!translatedDocumentText) {
+      documentOutput.textContent =
+        "Translation could not be completed. Check your internet connection and try again.";
+    }
+  } finally {
+    documentBusy = false;
+    setDocumentButtons();
+  }
+}
+
+async function copyTranslation() {
+  if (!translatedDocumentText) return;
+
+  try {
+    await navigator.clipboard.writeText(translatedDocumentText);
+    docStatus.textContent = "Translation copied to clipboard.";
+  } catch (err) {
+    console.error(err);
+    docStatus.textContent =
+      "Clipboard access was blocked. Select the translated text and copy it manually.";
+  }
+}
+
+function downloadTranslation() {
+  if (!translatedDocumentText) return;
+
+  const blob = new Blob([translatedDocumentText], {
+    type: "text/plain;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const baseName = (currentDocumentName || "document")
+    .replace(/\.(pdf|docx)$/i, "");
+
+  link.href = url;
+  link.download = baseName + "-translated.txt";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function clearDocument() {
+  if (documentBusy) return;
+
+  documentFile.value = "";
+  selectedDocument.textContent = "No document selected.";
+  docStatus.textContent = "Select a PDF or DOCX file to begin.";
+  documentOutput.textContent = "Your translation will appear here.";
+  extractedDocumentText = "";
+  translatedDocumentText = "";
+  currentDocumentName = "";
+  setDocProgress(0);
+  setDocumentButtons();
 }
 
 startButton.addEventListener("click", startListening);
@@ -868,7 +1113,6 @@ clearButton.addEventListener("click", () => {
 });
 
 fileButton.addEventListener("click", transcribeFile);
-
 audioFile.addEventListener("change", () => {
   const file = audioFile.files?.[0];
   fileStatus.textContent = file
@@ -876,10 +1120,28 @@ audioFile.addEventListener("change", () => {
     : "File transcription is optional.";
 });
 
-window.addEventListener("beforeunload", () => {
-  if (displayStream) {
-    displayStream.getTracks().forEach(track => track.stop());
+translateButton.addEventListener("click", translateDocument);
+clearDocumentButton.addEventListener("click", clearDocument);
+copyTranslationButton.addEventListener("click", copyTranslation);
+downloadTranslationButton.addEventListener("click", downloadTranslation);
+
+targetLanguage.addEventListener("change", () => {
+  // If a fixed source is selected, keep the source and target different.
+  if (sourceLanguage.value !== "auto" &&
+      sourceLanguage.value === targetLanguage.value) {
+    sourceLanguage.value = targetLanguage.value === "en" ? "es" : "en";
   }
+});
+
+sourceLanguage.addEventListener("change", () => {
+  if (sourceLanguage.value !== "auto" &&
+      sourceLanguage.value === targetLanguage.value) {
+    targetLanguage.value = sourceLanguage.value === "en" ? "es" : "en";
+  }
+});
+
+window.addEventListener("beforeunload", () => {
+  if (displayStream) displayStream.getTracks().forEach(track => track.stop());
 });
 
 loadModel();
