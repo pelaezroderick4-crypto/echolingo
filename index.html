@@ -89,6 +89,7 @@
       In Chrome, click Start Live Audio, choose a browser tab in the
       sharing window, and enable Share tab audio if that option appears.
       Do not select your microphone as a substitute for tab audio.
+      Live transcription may take longer than the audio itself.
     </p>
 
     <button id="startLiveButton" type="button" disabled>
@@ -120,7 +121,7 @@
 
   <p class="small">
     The first model download may take several minutes. Live transcription
-    uses short audio chunks and may have delays, missed words, or errors.
+    is experimental and may have delays, missed words, or errors.
     Keep this page open while testing.
   </p>
 </main>
@@ -153,12 +154,16 @@
   let processingChunk = false;
   let liveSessionId = 0;
 
-  // At most one additional chunk waits while Whisper is busy.
+  // Keep at most one waiting chunk so the browser does not fall
+  // increasingly far behind when inference takes longer than expected.
   let pendingChunk = null;
   let pendingSampleRate = 0;
 
-  const CHUNK_SECONDS = 5;
   const WHISPER_SAMPLE_RATE = 16000;
+
+  // Use longer chunks for more speech context, with a one-second overlap.
+  const CHUNK_SECONDS = 8;
+  const OVERLAP_SECONDS = 1;
 
   env.allowLocalModels = false;
   env.allowRemoteModels = true;
@@ -197,14 +202,8 @@
       : "Choose an audio file to begin.";
   });
 
-  // Convert decoded audio to mono, 16 kHz audio before sending it to Whisper.
+  // Prepare file audio as mono 16 kHz, matching Whisper's expected input.
   async function prepareWhisperAudio(decoded) {
-    const monoBuffer = new AudioBuffer({
-      numberOfChannels: 1,
-      length: decoded.length,
-      sampleRate: decoded.sampleRate
-    });
-
     const mono = new Float32Array(decoded.length);
 
     for (let channel = 0; channel < decoded.numberOfChannels; channel++) {
@@ -215,10 +214,17 @@
       }
     }
 
+    const monoBuffer = new AudioBuffer({
+      numberOfChannels: 1,
+      length: decoded.length,
+      sampleRate: decoded.sampleRate
+    });
+
     monoBuffer.copyToChannel(mono, 0);
 
-    const targetLength = Math.ceil(
-      decoded.duration * WHISPER_SAMPLE_RATE
+    const targetLength = Math.max(
+      1,
+      Math.ceil(decoded.duration * WHISPER_SAMPLE_RATE)
     );
 
     const offlineContext = new OfflineAudioContext(
@@ -235,10 +241,47 @@
     const resampledBuffer = await offlineContext.startRendering();
 
     return {
-      samples: resampledBuffer.getChannelData(0),
+      samples: new Float32Array(resampledBuffer.getChannelData(0)),
       originalSampleRate: decoded.sampleRate,
       duration: decoded.duration
     };
+  }
+
+  // Resample captured live audio to 16 kHz before Whisper receives it.
+  async function resampleLiveAudio(samples, originalSampleRate) {
+    if (originalSampleRate === WHISPER_SAMPLE_RATE) {
+      return new Float32Array(samples);
+    }
+
+    const inputBuffer = new AudioBuffer({
+      numberOfChannels: 1,
+      length: samples.length,
+      sampleRate: originalSampleRate
+    });
+
+    inputBuffer.copyToChannel(samples, 0);
+
+    const duration = samples.length / originalSampleRate;
+    const targetLength = Math.max(
+      1,
+      Math.ceil(duration * WHISPER_SAMPLE_RATE)
+    );
+
+    const offlineContext = new OfflineAudioContext(
+      1,
+      targetLength,
+      WHISPER_SAMPLE_RATE
+    );
+
+    const source = offlineContext.createBufferSource();
+    source.buffer = inputBuffer;
+    source.connect(offlineContext.destination);
+    source.start(0);
+
+    const rendered = await offlineContext.startRendering();
+
+    // Copy the rendered samples so they remain independent of the buffer.
+    return new Float32Array(rendered.getChannelData(0));
   }
 
   transcribeButton.addEventListener("click", async () => {
@@ -294,9 +337,7 @@
         "TRANSCRIPTION FAILED: " + error.message;
     } finally {
       if (context && context.state !== "closed") {
-        try {
-          await context.close();
-        } catch (_) {}
+        try { await context.close(); } catch (_) {}
       }
 
       transcribeButton.disabled =
@@ -304,16 +345,46 @@
     }
   });
 
+  // Remove repeated words at boundaries when adjacent chunks overlap.
   function appendLiveText(text) {
     const clean = (text || "").trim();
     if (!clean) return;
 
     if (liveOutput.textContent.startsWith(
       "Live speech will appear here"
-    )) {
+    ) || !liveOutput.textContent.trim()) {
       liveOutput.textContent = clean;
-    } else {
-      liveOutput.textContent += "\n" + clean;
+      return;
+    }
+
+    const existing = liveOutput.textContent.trim();
+    const oldWords = existing.split(/\s+/);
+    const newWords = clean.split(/\s+/);
+
+    const normalize = word =>
+      word.toLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, "");
+
+    const maxOverlap = Math.min(12, oldWords.length, newWords.length);
+    let overlap = 0;
+
+    for (let count = maxOverlap; count > 0; count--) {
+      const oldTail = oldWords.slice(-count).map(normalize);
+      const newHead = newWords.slice(0, count).map(normalize);
+
+      if (
+        oldTail.every((word, index) =>
+          word && word === newHead[index]
+        )
+      ) {
+        overlap = count;
+        break;
+      }
+    }
+
+    const remaining = newWords.slice(overlap).join(" ");
+
+    if (remaining) {
+      liveOutput.textContent = existing + " " + remaining;
     }
   }
 
@@ -322,11 +393,21 @@
 
     processingChunk = true;
     liveStatus.textContent =
-      "Transcribing English audio locally...";
+      "Preparing live audio and converting it to 16 kHz...";
 
     try {
-      const result = await transcriber(samples, {
-        sampling_rate: sampleRate,
+      const whisperSamples = await resampleLiveAudio(
+        samples,
+        sampleRate
+      );
+
+      if (!liveActive || sessionId !== liveSessionId) return;
+
+      liveStatus.textContent =
+        "Transcribing live English audio locally...";
+
+      const result = await transcriber(whisperSamples, {
+        sampling_rate: WHISPER_SAMPLE_RATE,
         language: "english",
         task: "transcribe",
         return_timestamps: false
@@ -336,13 +417,13 @@
         appendLiveText(result.text);
 
         liveStatus.textContent = pendingChunk
-          ? "Transcription running. Catching up with recent audio..."
-          : "Live capture is running. Processing continues in short chunks.";
+          ? "Transcription running. Processing the next recent audio chunk..."
+          : "Live capture is running. Waiting for more speech...";
       }
     } catch (error) {
       if (sessionId === liveSessionId) {
         liveStatus.textContent =
-          "Chunk transcription failed: " + error.message;
+          "Live transcription failed: " + error.message;
       }
     } finally {
       processingChunk = false;
@@ -411,6 +492,14 @@
   startLiveButton.addEventListener("click", async () => {
     if (!transcriber || liveActive) return;
 
+    // Do not start a new capture while an earlier Whisper inference
+    // is still running in the background.
+    if (processingChunk) {
+      liveStatus.textContent =
+        "The previous transcription is still finishing. Wait a few seconds, then try again.";
+      return;
+    }
+
     if (!navigator.mediaDevices ||
         !navigator.mediaDevices.getDisplayMedia) {
       liveStatus.textContent =
@@ -458,9 +547,14 @@
         4096, 1, 1
       );
 
-      const targetSamples = Math.floor(
-        liveAudioContext.sampleRate * CHUNK_SECONDS
+      const sourceSampleRate = liveAudioContext.sampleRate;
+      const chunkSamples = Math.floor(
+        sourceSampleRate * CHUNK_SECONDS
       );
+      const overlapSamples = Math.floor(
+        sourceSampleRate * OVERLAP_SECONDS
+      );
+      const stepSamples = chunkSamples - overlapSamples;
 
       liveProcessor.onaudioprocess = event => {
         if (!liveActive || thisSession !== liveSessionId) return;
@@ -473,22 +567,29 @@
 
         liveSampleCount += input.length;
 
-        while (liveSampleCount >= targetSamples) {
-          const chunkArray = liveSamples.splice(0, targetSamples);
-          liveSampleCount -= targetSamples;
-
+        while (liveSampleCount >= chunkSamples) {
+          const chunkArray = liveSamples.slice(0, chunkSamples);
           const chunk = new Float32Array(chunkArray);
-          const sampleRate = liveAudioContext.sampleRate;
+
+          // Advance by seven seconds, keeping the last second as context
+          // for the next eight-second chunk.
+          liveSamples.splice(0, stepSamples);
+          liveSampleCount -= stepSamples;
 
           if (!processingChunk) {
             void transcribeLiveChunk(
               chunk,
-              sampleRate,
+              sourceSampleRate,
               thisSession
             );
           } else {
+            // Keep the most recent waiting chunk rather than growing
+            // an unlimited queue when transcription falls behind.
             pendingChunk = chunk;
-            pendingSampleRate = sampleRate;
+            pendingSampleRate = sourceSampleRate;
+
+            liveStatus.textContent =
+              "Whisper is still processing. Keeping the most recent audio chunk...";
           }
         }
       };
@@ -518,7 +619,7 @@
 
       stopLiveButton.disabled = false;
       liveStatus.textContent =
-        "Live audio capture started. Play harmless test audio in the shared tab.";
+        "Live capture started. Speak or play harmless test audio in the shared tab.";
     } catch (error) {
       await stopLiveAudio(
         "Could not start live capture: " + error.message +
