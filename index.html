@@ -3,126 +3,501 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101827">
-  <title>EchoLingo | Live Audio Test</title>
+  <meta name="theme-color" content="#081020">
+  <title>VoxBridge | Voice Without Barriers</title>
+
   <style>
+    :root {
+      --navy: #081020;
+      --panel: #101e33;
+      --panel-dark: #071323;
+      --blue: #0084ff;
+      --teal: #00e5ab;
+      --violet: #8b5cf6;
+      --ice: #6ee7ff;
+      --text: #f3f7ff;
+      --muted: #9fb3ce;
+      --border: #243650;
+      --danger: #ff657a;
+    }
+
     * { box-sizing: border-box; }
+
     body {
-      margin: 0; min-height: 100vh; padding: 24px;
-      font-family: Arial, sans-serif;
-      background: #101827; color: #f3f6fc;
-      display: flex; justify-content: center; align-items: center;
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px 16px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(ellipse at 10% 0%, #10345b 0%, transparent 38%),
+        radial-gradient(ellipse at 100% 100%, #123b3c 0%, transparent 30%),
+        var(--navy);
     }
+
     main {
-      width: 100%; max-width: 760px; padding: 28px;
-      background: #1b2638; border: 1px solid #35435a;
-      border-radius: 18px;
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
     }
-    h1 { margin-top: 0; color: #7dd3fc; font-size: 34px; }
-    h2 { margin-top: 28px; font-size: 21px; }
-    .subtitle { color: #c0ccdd; line-height: 1.6; }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .logo {
+      width: 58px;
+      height: 58px;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      border: 1px solid #087fba;
+      border-radius: 17px;
+      color: var(--teal);
+      font-size: 30px;
+      background: #0c2036;
+      box-shadow: 0 0 22px #0084ff30;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 6vw, 42px);
+      letter-spacing: -1.5px;
+    }
+
+    .vox { color: #fff; }
+
+    .bridge {
+      background: linear-gradient(100deg, var(--blue), var(--teal));
+      color: transparent;
+      background-clip: text;
+      -webkit-background-clip: text;
+    }
+
+    .tagline {
+      margin: 7px 0 0;
+      color: var(--ice);
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+    }
+
+    .intro {
+      margin: 22px 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .panel {
+      margin-top: 18px;
+      padding: 22px;
+      background: linear-gradient(145deg, #101e33, #0b1729);
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      box-shadow: 0 12px 36px #0003;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 19px;
+      color: var(--ice);
+    }
+
+    h3 { margin: 0; font-size: 15px; }
+
+    p { line-height: 1.6; }
+
+    .muted, .small {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .small { font-size: 13px; }
+
     button, input {
-      width: 100%; margin-top: 12px; padding: 14px;
-      border-radius: 10px; font-size: 16px;
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px 15px;
+      border-radius: 11px;
+      font: inherit;
     }
+
     button {
-      border: 0; background: #0284c7; color: white;
-      font-weight: bold; cursor: pointer;
+      border: 1px solid transparent;
+      background: linear-gradient(105deg, #0078f8, #2455ff);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: filter .2s, transform .2s;
     }
-    button.secondary { background: #475569; }
-    button.stop { background: #b91c1c; }
-    button:disabled { opacity: .55; cursor: not-allowed; }
-    .status, .output {
-      margin-top: 18px; padding: 16px; background: #101827;
-      border: 1px solid #35435a; border-radius: 10px;
-      line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap;
-      min-height: 50px;
+
+    button:hover:not(:disabled) {
+      filter: brightness(1.15);
+      transform: translateY(-1px);
     }
+
+    button:disabled {
+      opacity: .48;
+      cursor: not-allowed;
+    }
+
+    button.secondary {
+      background: #172840;
+      border-color: #38516f;
+    }
+
+    button.stop {
+      background: #3a1827;
+      border-color: #9c3854;
+      color: #ffd9e0;
+    }
+
+    input[type="file"] {
+      background: #0b1729;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: bold;
+    }
+
+    .status {
+      margin-top: 14px;
+      padding: 13px 15px;
+      background: #0a1627;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      color: #c5d8ef;
+      line-height: 1.55;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+    }
+
+    .status.live { border-color: #087b75; }
+    .status.error { border-color: #a83b56; }
+
+    .section-divider {
+      height: 1px;
+      margin: 24px 0;
+      background: var(--border);
+    }
+
+    .live-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border: 1px solid #40506a;
+      border-radius: 30px;
+      background: #142138;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #73839a;
+    }
+
+    .live-pill.active {
+      border-color: #166b63;
+      background: #0b302e;
+      color: var(--teal);
+    }
+
+    .live-pill.active .dot {
+      background: var(--teal);
+      box-shadow: 0 0 12px var(--teal);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      50% { opacity: .35; }
+    }
+
+    /* Fixed-size conversation window */
+    .chat-shell {
+      margin-top: 18px;
+      border: 1px solid #087fba;
+      border-radius: 16px;
+      background: var(--panel-dark);
+      box-shadow: 0 0 24px #0084ff12;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      min-height: 58px;
+      padding: 12px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chat-header-title {
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .chat-header button {
+      width: auto;
+      margin: 0;
+      padding: 10px 14px;
+      font-size: 13px;
+    }
+
+    .chat-messages {
+      height: 350px;
+      padding: 18px 14px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      scrollbar-color: #1676c7 #0a1627;
+      scrollbar-width: thin;
+    }
+
+    .empty-chat {
+      margin: auto;
+      max-width: 290px;
+      text-align: center;
+      color: #7890ad;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .bubble {
+      max-width: 85%;
+      padding: 11px 14px;
+      border-radius: 15px;
+      overflow-wrap: anywhere;
+      white-space: pre-wrap;
+      line-height: 1.5;
+      animation: appear .18s ease-out;
+    }
+
+    @keyframes appear {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bubble.english {
+      align-self: flex-start;
+      background: linear-gradient(120deg, #075ec8, #087ce8);
+      border: 1px solid #168aff;
+      border-bottom-left-radius: 4px;
+      color: white;
+    }
+
+    .bubble.spanish {
+      align-self: flex-end;
+      background: linear-gradient(120deg, #086b55, #087e68);
+      border: 1px solid #00a985;
+      border-bottom-right-radius: 4px;
+      color: white;
+    }
+
+    .bubble.unknown {
+      align-self: flex-start;
+      background: #202e43;
+      border: 1px solid #64748b;
+      border-bottom-left-radius: 4px;
+      color: white;
+    }
+
+    .bubble-label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 10px;
+      font-weight: bold;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      opacity: .85;
+    }
+
+    .chat-footer {
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
     .notice {
-      margin-top: 18px; padding: 14px;
-      border-left: 4px solid #fbbf24; background: #292719;
-      color: #fef3c7; line-height: 1.6; font-size: 14px;
+      margin-top: 18px;
+      padding: 14px;
+      border-left: 4px solid #e9b949;
+      background: #292719;
+      color: #fef3c7;
+      line-height: 1.6;
+      font-size: 13px;
+      border-radius: 4px 10px 10px 4px;
     }
-    .small { color: #9eafc5; font-size: 13px; line-height: 1.6; }
-    label { display: block; margin-top: 18px; font-weight: bold; }
-    .section {
-      margin-top: 24px; padding-top: 4px;
-      border-top: 1px solid #35435a;
+
+    .footer {
+      text-align: center;
+      color: #7188a6;
+      font-size: 11px;
+      letter-spacing: 1px;
+      margin: 22px 0 8px;
+    }
+
+    @media (max-width: 560px) {
+      body { padding: 16px 10px; }
+      .panel { padding: 15px; }
+      .logo { width: 48px; height: 48px; font-size: 25px; }
+      .tagline { letter-spacing: 1.4px; font-size: 10px; }
+      .chat-messages { height: 330px; padding: 14px 10px; }
+      .bubble { max-width: 92%; }
+      .chat-header { align-items: flex-start; }
+      .chat-header button { width: 100%; }
     }
   </style>
 </head>
+
 <body>
 <main>
-  <h1>EchoLingo</h1>
-  <p class="subtitle">English ↔ Spanish · Local Transcription Test</p>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">≋</div>
+      <div>
+        <h1><span class="vox">Vox</span><span class="bridge">Bridge</span></h1>
+        <p class="tagline">Voice Without Barriers</p>
+      </div>
+    </div>
 
-  <p>
-    Test local audio transcription or try capturing audio from a browser
-    tab. Live transcription is experimental.
-  </p>
+    <p class="intro">
+      A bilingual voice experiment designed to help people follow
+      conversations in English and Spanish. Live recognition is
+      experimental and may make mistakes.
+    </p>
+  </header>
 
-  <button id="loadButton" type="button">Load Local Whisper Model</button>
+  <section class="panel">
+    <h2>01 / Initialize Voice Engine</h2>
+    <p class="small">
+      Load the multilingual Whisper Tiny model before transcribing a file
+      or starting live browser-tab audio capture.
+    </p>
 
-  <div id="status" class="status" role="status" aria-live="polite">
-    Status: Model not loaded.
-  </div>
+    <button id="loadButton" type="button">Initialize VoxBridge</button>
 
-  <section class="section">
-    <h2>1. Transcribe an Audio File</h2>
+    <div id="status" class="status" role="status" aria-live="polite">
+      System standby. Voice engine not loaded.
+    </div>
 
-    <label for="audioFile">Choose a harmless audio file</label>
+    <div class="section-divider"></div>
+
+    <h2>02 / Audio File Transcription</h2>
+    <p class="small">
+      Choose an audio file to transcribe it locally in your browser.
+      Automatic language detection is experimental.
+    </p>
+
+    <label for="audioFile">Select an audio file</label>
     <input id="audioFile" type="file" accept="audio/*">
 
     <button id="transcribeButton" type="button" disabled>
-      Transcribe Selected Audio
+      Transcribe Audio File
     </button>
 
-    <div id="output" class="output">
+    <div id="output" class="status" aria-live="polite">
       Your file transcription will appear here.
     </div>
-  </section>
 
-  <section class="section">
-    <h2>2. Live Browser Audio Test</h2>
+    <div class="section-divider"></div>
+
+    <div class="live-heading">
+      <h2 style="margin:0">03 / Live Conversation</h2>
+      <div id="livePill" class="live-pill">
+        <span class="dot"></span>
+        <span id="livePillText">STANDBY</span>
+      </div>
+    </div>
 
     <p class="small">
-      In Chrome, click Start Live Audio, choose a browser tab, and enable
-      Share tab audio. Do not select your microphone as a substitute.
-      Live transcription may lag behind playback if Whisper is slow.
+      Start live audio, select a browser tab, and enable
+      <strong>Share tab audio</strong>. Keep this page open while testing.
+      Do not select your microphone as a substitute for tab audio.
     </p>
 
     <button id="startLiveButton" type="button" disabled>
       Start Live Audio
     </button>
+
     <button id="stopLiveButton" class="stop" type="button" disabled>
       Stop Live Audio
     </button>
 
-    <div id="liveStatus" class="status" role="status" aria-live="polite">
-      Live audio is stopped.
+    <div id="liveStatus" class="status live" role="status" aria-live="polite">
+      Live capture is stopped.
     </div>
 
-    <h3>Live Transcription</h3>
-    <div id="liveOutput" class="output">
-      Live speech will appear here after audio is captured and processed.
+    <div class="chat-shell">
+      <div class="chat-header">
+        <div class="chat-header-title">VoxBridge / Conversation</div>
+        <button id="newConversationButton" type="button" class="secondary">
+          ＋ New Conversation
+        </button>
+      </div>
+
+      <div id="liveOutput" class="chat-messages" role="log"
+           aria-live="polite" aria-relevant="additions text">
+        <div id="emptyChat" class="empty-chat">
+          Your conversation will appear here.<br>
+          Start live audio to begin capturing speech.
+        </div>
+      </div>
+
+      <div class="chat-footer">
+        ENGLISH · BLUE &nbsp; / &nbsp; ESPAÑOL · TEAL
+        <br>
+        New Conversation clears visible messages without stopping audio capture.
+      </div>
     </div>
   </section>
 
   <div class="notice">
-    <strong>Privacy:</strong> Audio is intended to be processed in this
-    browser and is not intentionally uploaded by this page. The model and
-    software are downloaded from external hosting. Browser permissions and
-    network activity may vary. Do not use patient, student, or other
-    sensitive audio. This prototype is not certified or verified as
-    HIPAA/FERPA compliant. Confirm applicable workplace policies before
-    capturing any real calls.
+    <strong>Privacy and limitations:</strong>
+    Audio is intended to be processed in this browser and is not intentionally
+    uploaded by this page. The model and software are downloaded from external
+    hosting. Browser permissions and network activity may vary. Do not use
+    patient, student, or other sensitive audio. This prototype is not certified
+    or verified as HIPAA/FERPA compliant. Confirm applicable workplace policies
+    before capturing real calls.
   </div>
 
   <p class="small">
-    The first model download may take several minutes. Live transcription
-    is experimental and may have delays, missed words, or errors.
-    Keep this page open while testing.
+    The initial model download may take several minutes. Live transcription
+    can lag, omit words, repeat words, or identify a language incorrectly.
+    VoxBridge currently transcribes speech; it does not provide guaranteed
+    live translation.
   </p>
+
+  <div class="footer">VOXBRIDGE · TWO LANGUAGES. ONE CONVERSATION.</div>
 </main>
 
 <script type="module">
@@ -139,6 +514,11 @@
   const stopLiveButton = document.getElementById("stopLiveButton");
   const liveStatus = document.getElementById("liveStatus");
   const liveOutput = document.getElementById("liveOutput");
+  const newConversationButton =
+    document.getElementById("newConversationButton");
+  const emptyChat = document.getElementById("emptyChat");
+  const livePill = document.getElementById("livePill");
+  const livePillText = document.getElementById("livePillText");
 
   let transcriber = null;
   let liveStream = null;
@@ -153,22 +533,35 @@
   let processingChunk = false;
   let liveSessionId = 0;
 
-  // FIFO queue: preserve captured chunks rather than replacing older audio.
+  // Incremented whenever the user clears the conversation.
+  // Results started in an older conversation are never displayed.
+  let conversationGeneration = 0;
+
+  // A bounded FIFO queue prevents unlimited backlog if inference is slow.
   let liveChunkQueue = [];
   let processedChunkCount = 0;
+  let droppedChunkCount = 0;
   let totalInferenceSeconds = 0;
+  let lastDisplayedText = "";
 
   const WHISPER_SAMPLE_RATE = 16000;
   const CHUNK_SECONDS = 8;
   const OVERLAP_SECONDS = 1;
+  const MAX_QUEUED_CHUNKS = 3;
 
   env.allowLocalModels = false;
   env.allowRemoteModels = true;
 
+  function setPill(active, label) {
+    livePill.classList.toggle("active", active);
+    livePillText.textContent = label;
+  }
+
   loadButton.addEventListener("click", async () => {
     loadButton.disabled = true;
+    statusBox.classList.remove("error");
     statusBox.textContent =
-      "Loading multilingual Whisper model. Please wait...";
+      "Initializing multilingual Whisper model. Please wait...";
     outputBox.textContent = "";
 
     try {
@@ -179,10 +572,12 @@
       );
 
       statusBox.textContent =
-        "SUCCESS: Model loaded. You can test a file or live audio.";
+        "Voice engine ready. You can transcribe a file or start live audio.";
       transcribeButton.disabled = !audioFile.files.length;
       startLiveButton.disabled = false;
+      loadButton.textContent = "Voice Engine Ready";
     } catch (error) {
+      statusBox.classList.add("error");
       statusBox.textContent =
         "MODEL LOAD FAILED: " + error.message +
         "\nCheck your connection and try again.";
@@ -195,11 +590,11 @@
       !transcriber || !audioFile.files.length;
 
     outputBox.textContent = audioFile.files.length
-      ? "Ready when you are."
+      ? "Ready to transcribe."
       : "Choose an audio file to begin.";
   });
 
-  // File transcription preparation remains unchanged.
+  // Preserve the existing mono conversion and 16 kHz resampling.
   async function prepareWhisperAudio(decoded) {
     const mono = new Float32Array(decoded.length);
 
@@ -283,6 +678,7 @@
     if (!file || !transcriber) return;
 
     transcribeButton.disabled = true;
+    statusBox.classList.remove("error");
     statusBox.textContent = "Reading and preparing audio...";
     outputBox.textContent = "";
 
@@ -299,17 +695,18 @@
       }
 
       statusBox.textContent =
-        "Preparing audio: " + decoded.duration.toFixed(1) +
-        " seconds. Converting to 16,000 Hz...";
+        "Preparing " + decoded.duration.toFixed(1) +
+        " seconds of audio at 16,000 Hz...";
 
       const prepared = await prepareWhisperAudio(decoded);
 
       statusBox.textContent =
-        "Transcribing in English. Please wait...";
+        "Transcribing audio with automatic language detection...";
 
+      // Omit language: Whisper can attempt to detect English, Spanish,
+      // or another supported language.
       const result = await transcriber(prepared.samples, {
         sampling_rate: WHISPER_SAMPLE_RATE,
-        language: "english",
         task: "transcribe",
         return_timestamps: false
       });
@@ -318,10 +715,11 @@
         (result.text || "").trim() || "(No speech detected.)";
 
       statusBox.textContent =
-        "Finished. Audio duration: " +
-        prepared.duration.toFixed(1) + " seconds. Original sample rate: " +
+        "Finished. Duration: " + prepared.duration.toFixed(1) +
+        " seconds. Original sample rate: " +
         prepared.originalSampleRate + " Hz. Whisper input: 16000 Hz mono.";
     } catch (error) {
+      statusBox.classList.add("error");
       statusBox.textContent =
         "TRANSCRIPTION FAILED: " + error.message;
     } finally {
@@ -334,55 +732,138 @@
     }
   });
 
-  function appendLiveText(text) {
+  // Experimental text-based language labeling. This is a heuristic,
+  // not a guarantee of Whisper's actual detected language.
+  function identifyLanguage(text) {
     const clean = (text || "").trim();
-    if (!clean) return;
+    if (!clean) return "unknown";
 
-    if (
-      liveOutput.textContent.startsWith("Live speech will appear here") ||
-      !liveOutput.textContent.trim()
-    ) {
-      liveOutput.textContent = clean;
-      return;
+    const lower = " " + clean.toLocaleLowerCase() + " ";
+
+    const spanishMarkers = [
+      " el ", " la ", " los ", " las ", " una ", " uno ",
+      " que ", " de ", " del ", " y ", " pero ", " porque ",
+      " hola ", " gracias ", " cómo ", " como ", " está ",
+      " estoy ", " tengo ", " para ", " buenos ", " buenas ",
+      " también ", " muy ", " usted ", " ustedes ", " no sé ",
+      " qué ", " sí ", " por favor ", " entonces ", " quiero ",
+      " puedes ", " puedo ", " necesito ", " español "
+    ];
+
+    const englishMarkers = [
+      " the ", " and ", " is ", " are ", " you ", " your ",
+      " have ", " has ", " hello ", " thanks ", " thank you ",
+      " what ", " where ", " when ", " why ", " how ",
+      " this ", " that ", " with ", " for ", " not ", " do ",
+      " does ", " can ", " could ", " would ", " should ",
+      " please ", " good ", " morning ", " evening ", " english "
+    ];
+
+    const spanishScore = spanishMarkers.reduce(
+      (score, marker) => score + (lower.includes(marker) ? 1 : 0), 0
+    );
+
+    const englishScore = englishMarkers.reduce(
+      (score, marker) => score + (lower.includes(marker) ? 1 : 0), 0
+    );
+
+    if (/[¿¡áéíóúüñ]/i.test(clean)) return "spanish";
+    if (spanishScore > englishScore) return "spanish";
+    if (englishScore > spanishScore) return "english";
+
+    // Very short utterances and shared words are difficult to classify.
+    return "unknown";
+  }
+
+  function normalizeWord(word) {
+    return word.toLocaleLowerCase().replace(
+      /^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ""
+    );
+  }
+
+  // Remove duplicated words caused by overlapping audio chunks.
+  function removeOverlap(previousText, newText) {
+    const previousWords = (previousText || "").trim().split(/\s+/)
+      .filter(Boolean);
+    const newWords = (newText || "").trim().split(/\s+/).filter(Boolean);
+
+    if (!previousWords.length || !newWords.length) {
+      return newText.trim();
     }
 
-    const existing = liveOutput.textContent.trim();
-    const oldWords = existing.split(/\s+/);
-    const newWords = clean.split(/\s+/);
-
-    const normalize = word =>
-      word.toLowerCase().replace(
-        /^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, ""
-      );
-
-    const maxOverlap = Math.min(12, oldWords.length, newWords.length);
-    let overlap = 0;
+    const maxOverlap = Math.min(
+      12, previousWords.length, newWords.length
+    );
 
     for (let count = maxOverlap; count > 0; count--) {
-      const oldTail = oldWords.slice(-count).map(normalize);
-      const newHead = newWords.slice(0, count).map(normalize);
+      const oldTail = previousWords.slice(-count).map(normalizeWord);
+      const newHead = newWords.slice(0, count).map(normalizeWord);
 
       if (oldTail.every((word, index) =>
         word && word === newHead[index]
       )) {
-        overlap = count;
-        break;
+        return newWords.slice(count).join(" ");
       }
     }
 
-    const remaining = newWords.slice(overlap).join(" ");
-    if (remaining) liveOutput.textContent = existing + " " + remaining;
+    return newWords.join(" ");
+  }
+
+  function showEmptyChat() {
+    if (!liveOutput.querySelector(".bubble")) {
+      emptyChat.style.display = "block";
+    }
+  }
+
+  function appendLiveText(text, generation) {
+    // Ignore results that belong to a conversation cleared by the user.
+    if (generation !== conversationGeneration) return;
+
+    const clean = (text || "").trim();
+    if (!clean) return;
+
+    const language = identifyLanguage(clean);
+    const previous = lastDisplayedText;
+    const cleanedText = removeOverlap(previous, clean);
+
+    if (!cleanedText.trim()) return;
+
+    emptyChat.style.display = "none";
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble " + language;
+
+    const label = document.createElement("span");
+    label.className = "bubble-label";
+    label.textContent =
+      language === "english" ? "English" :
+      language === "spanish" ? "Español" :
+      "Language uncertain";
+
+    const message = document.createElement("span");
+    message.textContent = cleanedText;
+
+    bubble.appendChild(label);
+    bubble.appendChild(message);
+    liveOutput.appendChild(bubble);
+
+    // Preserve scroll position at the newest message.
+    liveOutput.scrollTop = liveOutput.scrollHeight;
+    lastDisplayedText = clean;
   }
 
   function updateLiveStatus(message) {
     const waiting = liveChunkQueue.length;
-    liveStatus.textContent = message +
-      "\nChunks completed: " + processedChunkCount +
+    const average = processedChunkCount
+      ? (totalInferenceSeconds / processedChunkCount).toFixed(1) + " s"
+      : "not measured";
+
+    liveStatus.textContent =
+      message +
+      "\nCompleted chunks: " + processedChunkCount +
       " | Waiting: " + waiting +
-      " | Average processing time: " +
-      (processedChunkCount
-        ? (totalInferenceSeconds / processedChunkCount).toFixed(1) + " s"
-        : "not measured");
+      " | Dropped queued chunks: " + droppedChunkCount +
+      " | Average inference: " + average;
   }
 
   async function processLiveQueue(sessionId) {
@@ -400,21 +881,25 @@
       ) {
         const item = liveChunkQueue.shift();
 
+        // Do not waste time processing chunks from a cleared conversation.
+        if (item.generation !== conversationGeneration) continue;
+
         updateLiveStatus("Preparing captured audio...");
+
         const whisperSamples = await resampleLiveAudio(
           item.samples,
           item.sampleRate
         );
 
         if (!liveActive || sessionId !== liveSessionId) break;
+        if (item.generation !== conversationGeneration) continue;
 
-        updateLiveStatus("Transcribing an audio chunk...");
+        updateLiveStatus("Recognizing speech...");
 
         const startedAt = performance.now();
 
         const result = await transcriber(whisperSamples, {
           sampling_rate: WHISPER_SAMPLE_RATE,
-          language: "english",
           task: "transcribe",
           return_timestamps: false
         });
@@ -425,7 +910,9 @@
 
         if (!liveActive || sessionId !== liveSessionId) break;
 
-        appendLiveText(result.text);
+        if (item.generation === conversationGeneration) {
+          appendLiveText(result.text, item.generation);
+        }
 
         const audioSeconds = item.samples.length / item.sampleRate;
         const speedRatio = elapsedSeconds / audioSeconds;
@@ -436,8 +923,7 @@
           " seconds of audio.";
 
         if (speedRatio > 1) {
-          message +=
-            " Processing is slower than real time; the queue may grow.";
+          message += " Processing is slower than real time.";
         } else {
           message += " Processing kept up with this chunk.";
         }
@@ -446,11 +932,16 @@
       }
     } catch (error) {
       if (sessionId === liveSessionId) {
+        liveStatus.classList.add("error");
         liveStatus.textContent =
           "Live transcription failed: " + error.message;
       }
     } finally {
       processingChunk = false;
+
+      // Keep the controls usable even if a session was stopped mid-inference.
+      startLiveButton.disabled = !transcriber || liveActive;
+      stopLiveButton.disabled = !liveActive;
 
       if (
         liveActive &&
@@ -468,7 +959,7 @@
     liveActive = false;
     liveSessionId++;
 
-    // Discard remaining queued chunks when the user stops the session.
+    // Discard chunks not yet processed.
     liveChunkQueue = [];
 
     if (liveProcessor) {
@@ -488,7 +979,9 @@
     }
 
     if (liveStream) {
-      liveStream.getTracks().forEach(track => track.stop());
+      liveStream.getTracks().forEach(track => {
+        try { track.stop(); } catch (_) {}
+      });
       liveStream = null;
     }
 
@@ -500,48 +993,66 @@
     liveSamples = [];
     liveSampleCount = 0;
 
+    setPill(false, "STANDBY");
     startLiveButton.disabled = !transcriber || processingChunk;
     stopLiveButton.disabled = true;
+    liveStatus.classList.remove("error");
     liveStatus.textContent = message;
   }
 
+  // Clear the visible chat only. Do not stop the audio stream or session.
+  newConversationButton.addEventListener("click", () => {
+    conversationGeneration++;
+    lastDisplayedText = "";
+    liveChunkQueue = [];
+
+    liveOutput.querySelectorAll(".bubble").forEach(bubble => bubble.remove());
+    emptyChat.style.display = "block";
+
+    if (liveActive) {
+      updateLiveStatus(
+        "New conversation started. Audio capture is still running."
+      );
+    } else {
+      liveStatus.textContent =
+        "Conversation cleared. Start live audio when ready.";
+    }
+  });
+
   startLiveButton.addEventListener("click", async () => {
     if (!transcriber || liveActive) return;
-
-    if (processingChunk) {
-      liveStatus.textContent =
-        "The previous transcription is still finishing. Wait a few seconds and try again.";
-      return;
-    }
 
     if (
       !navigator.mediaDevices ||
       !navigator.mediaDevices.getDisplayMedia
     ) {
       liveStatus.textContent =
-        "This browser does not support browser-tab capture here. Try an up-to-date Chrome browser.";
+        "Browser-tab capture is not supported here. Try an up-to-date Chrome browser.";
       return;
     }
 
     startLiveButton.disabled = true;
+    liveStatus.classList.remove("error");
     liveStatus.textContent =
       "Choose a browser tab and enable Share tab audio.";
 
     try {
-      liveStream = await navigator.mediaDevices.getDisplayMedia({
+      const stream = await navigator.mediaDevices.getDisplayMedia({
         video: true,
         audio: true
       });
 
-      const audioTracks = liveStream.getAudioTracks();
+      const audioTracks = stream.getAudioTracks();
 
       if (!audioTracks.length) {
-        await stopLiveAudio(
-          "No shared tab audio was received. Try again and enable Share tab audio."
-        );
+        stream.getTracks().forEach(track => track.stop());
+        liveStatus.textContent =
+          "No shared tab audio received. Try again and enable Share tab audio.";
+        startLiveButton.disabled = !transcriber;
         return;
       }
 
+      liveStream = stream;
       liveSessionId++;
       const thisSession = liveSessionId;
       liveActive = true;
@@ -550,9 +1061,9 @@
       liveSampleCount = 0;
       liveChunkQueue = [];
       processedChunkCount = 0;
+      droppedChunkCount = 0;
       totalInferenceSeconds = 0;
 
-      liveOutput.textContent = "";
       liveAudioContext = new AudioContext();
       await liveAudioContext.resume();
 
@@ -563,7 +1074,9 @@
       liveProcessor = liveAudioContext.createScriptProcessor(4096, 1, 1);
 
       const sourceSampleRate = liveAudioContext.sampleRate;
-      const chunkSamples = Math.floor(sourceSampleRate * CHUNK_SECONDS);
+      const chunkSamples = Math.floor(
+        sourceSampleRate * CHUNK_SECONDS
+      );
       const overlapSamples = Math.floor(
         sourceSampleRate * OVERLAP_SECONDS
       );
@@ -588,10 +1101,17 @@
           liveSamples.splice(0, stepSamples);
           liveSampleCount -= stepSamples;
 
-          // Keep chunks in order so speech is not silently replaced.
+          // Drop the oldest waiting chunk when the queue is full.
+          // This bounds latency at the cost of potentially missing speech.
+          if (liveChunkQueue.length >= MAX_QUEUED_CHUNKS) {
+            liveChunkQueue.shift();
+            droppedChunkCount++;
+          }
+
           liveChunkQueue.push({
             samples: chunk,
-            sampleRate: sourceSampleRate
+            sampleRate: sourceSampleRate,
+            generation: conversationGeneration
           });
 
           updateLiveStatus("Audio captured and queued.");
@@ -609,11 +1129,11 @@
       liveProcessor.connect(silentGain);
       silentGain.connect(liveAudioContext.destination);
 
-      liveStream.getVideoTracks().forEach(track => {
+      stream.getVideoTracks().forEach(track => {
         track.addEventListener("ended", () => {
           if (thisSession === liveSessionId && liveActive) {
             void stopLiveAudio("Browser-tab sharing ended.");
-          });
+          }
         });
       });
 
@@ -625,12 +1145,22 @@
         });
       });
 
+      startLiveButton.disabled = true;
       stopLiveButton.disabled = false;
-      updateLiveStatus("Live capture started. Play your test clip.");
+      setPill(true, "LISTENING");
+
+      updateLiveStatus(
+        "Live capture started. Play your test clip."
+      );
     } catch (error) {
+      if (liveStream) {
+        liveStream.getTracks().forEach(track => track.stop());
+        liveStream = null;
+      }
+
       await stopLiveAudio(
         "Could not start live capture: " + error.message +
-        ". Make sure you selected a tab with audio."
+        ". Select a browser tab and enable Share tab audio."
       );
     }
   });
@@ -648,6 +1178,9 @@
       liveAudioContext.close();
     }
   });
+
+  // Keep the empty-state message accurate when the conversation is cleared.
+  showEmptyChat();
 </script>
 </body>
 </html>
